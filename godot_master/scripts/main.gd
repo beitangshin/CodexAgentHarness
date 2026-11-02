@@ -59,6 +59,9 @@ var overview_machines: VBoxContainer
 var machines_page_list: VBoxContainer
 var machine_picker: OptionButton
 var machine_picker_sources: Array[String] = []
+var inspector_panel: PanelContainer
+var inspector_toggle_button: Button
+var inspector_open := false
 var new_paths_by_machine: Dictionary = {}
 var path_machine_id := ""
 var workbench_subtitle_label: Label
@@ -119,6 +122,7 @@ func _ready() -> void:
 		var stored_aliases: Variant = settings.get_value("ui", "machine_aliases", {})
 		if stored_aliases is Dictionary:
 			machine_aliases = stored_aliases
+		inspector_open = bool(settings.get_value("ui", "inspector_open", false))
 	if language != "en":
 		language = "zh"
 	var system_font := SystemFont.new()
@@ -255,6 +259,7 @@ func _refresh_language(node: Node = null) -> void:
 		confirm_dialog.dialog_text = I18n.translate("删除此实例的本地历史记录？该操作无法撤销。", language)
 	elif confirm_action == "trust_project":
 		_set_trust_confirmation_text()
+	_refresh_inspector_toggle()
 
 
 func _data_label(value: String, size: int = 14, color: Color = TEXT) -> Label:
@@ -630,6 +635,10 @@ func _build_workbench(host: Control) -> void:
 	var reload := _button("刷新")
 	reload.pressed.connect(_poll_status)
 	header.add_child(reload)
+	inspector_toggle_button = _button("显示配置")
+	inspector_toggle_button.pressed.connect(_toggle_inspector)
+	header.add_child(inspector_toggle_button)
+	_refresh_inspector_toggle()
 	var columns := HBoxContainer.new()
 	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	columns.add_theme_constant_override("separation", 12)
@@ -694,12 +703,13 @@ func _build_activity_column(columns: HBoxContainer) -> void:
 
 
 func _build_inspector_column(columns: HBoxContainer) -> void:
-	var panel := _panel()
-	panel.custom_minimum_size = Vector2(316, 0)
-	columns.add_child(panel)
+	inspector_panel = _panel()
+	inspector_panel.custom_minimum_size = Vector2(316, 0)
+	inspector_panel.visible = inspector_open
+	columns.add_child(inspector_panel)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel.add_child(scroll)
+	inspector_panel.add_child(scroll)
 	var content := VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 9)
@@ -798,6 +808,25 @@ func _build_inspector_column(columns: HBoxContainer) -> void:
 	_fill_model_options(new_model, "")
 	_fill_effort_options(existing_effort, "")
 	_fill_effort_options(new_effort, "")
+
+
+func _toggle_inspector() -> void:
+	inspector_open = not inspector_open
+	if is_instance_valid(inspector_panel):
+		inspector_panel.visible = inspector_open
+	var settings := ConfigFile.new()
+	settings.load("user://ui_settings.cfg")
+	settings.set_value("ui", "inspector_open", inspector_open)
+	settings.save("user://ui_settings.cfg")
+	_refresh_inspector_toggle()
+
+
+func _refresh_inspector_toggle() -> void:
+	if not is_instance_valid(inspector_toggle_button):
+		return
+	var source := "收起配置" if inspector_open else "显示配置"
+	inspector_toggle_button.text = I18n.translate(source, language)
+	inspector_toggle_button.tooltip_text = I18n.translate("展开或收起实例配置面板。", language)
 
 
 func _fill_modes(option: OptionButton) -> void:

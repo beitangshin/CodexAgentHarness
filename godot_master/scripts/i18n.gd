@@ -47,6 +47,8 @@ const EN := {
     "Bypass（绕过沙箱与审批）": "Bypass (skip sandbox and approvals)",
     "沿用 Codex 配置模型": "Use the model from Codex settings",
     "沿用模型默认推理力度": "Use the model's default reasoning effort",
+    "显示配置": "Show settings", "收起配置": "Hide settings",
+    "展开或收起实例配置面板。": "Show or hide the instance settings panel.",
     "● Master 运行中": "● Master running",
     "● Master 未连接": "● Master disconnected", "暂无 Codex 实例": "No Codex instances",
     "● 在线": "● Online", "● 离线": "● Offline", "在线": "Online", "离线": "Offline",

@@ -493,7 +493,8 @@
       "目标机终端":"Target terminal", "Master 任务":"Master task", "命令等待审批":"Command needs approval", "文件修改等待审批":"File edit needs approval",
       "允许一次":"Allow once", "本次会话允许":"Allow for this session", "拒绝":"Reject",
       "Codex 正等待处理；如果审批卡片尚未出现，请查看目标机终端。":"Codex is waiting; check the target terminal if the approval card has not appeared.",
-      "收起实例管理":"Hide instance management", "现有项目权限":"Existing project permissions", "尚无记录":"No record yet",
+      "收起实例管理":"Hide instance management", "显示配置":"Show settings", "收起配置":"Hide settings",
+      "现有项目权限":"Existing project permissions", "尚无记录":"No record yet",
       "默认力度":"Default effort", "请选择实例":"Select an instance", "现有实例的启动权限":"Launch permissions for existing instance",
       "应用设置并重启":"Apply settings and restart", "停止实例":"Stop instance", "删除历史":"Delete history",
       "信任目录并重启":"Trust folder and restart", "最近操作":"Recent actions", "请填写 VDI 工作目录":"Enter a VDI working directory",
@@ -918,7 +919,7 @@
         renderDetail();
         root.querySelector('[data-control="cwd"]')?.focus();
       });
-      const inspectorButton = node("button", "secondary-button", state.inspectorOpen ? "收起设置" : "管理实例");
+      const inspectorButton = node("button", "secondary-button", state.inspectorOpen ? "收起配置" : "显示配置");
       inspectorButton.type = "button";
       inspectorButton.setAttribute("aria-expanded", String(state.inspectorOpen));
       inspectorButton.addEventListener("click", () => {
@@ -1154,7 +1155,7 @@
       const settingsHeading = node("div", "settings-heading");
       const closeSettings = node("button", "settings-close", "×");
       closeSettings.type = "button";
-      closeSettings.setAttribute("aria-label", "收起实例管理");
+      closeSettings.setAttribute("aria-label", "收起配置");
       closeSettings.addEventListener("click", () => {
         state.inspectorOpen = false;
         saveSelection("cah:inspector-open", "0");
