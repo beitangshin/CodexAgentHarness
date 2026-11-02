@@ -59,13 +59,15 @@ if (-not $SkipLinuxPython) {
 
 if (-not $SlaveOnly) {
     if (-not (Test-Path -LiteralPath $Godot)) { throw "Godot editor not found: $Godot" }
+    $godotLogDirectory = Join-Path $repository 'build\godot-logs'
+    New-Item -ItemType Directory -Force -Path $godotLogDirectory | Out-Null
     foreach ($preset in @(@('Windows Desktop', 'windows-master', 'CodexAgentHarness-Master.exe'),
                          @('Linux', 'linux-master', 'CodexAgentHarness-Master.x86_64'))) {
         $target = Join-Path $distribution $preset[1]
         New-Item -ItemType Directory -Force -Path $target | Out-Null
         $output = Join-Path $target $preset[2]
-        $stdout = Join-Path $distribution "godot-$($preset[1]).out.log"
-        $stderr = Join-Path $distribution "godot-$($preset[1]).err.log"
+        $stdout = Join-Path $godotLogDirectory "godot-$($preset[1]).out.log"
+        $stderr = Join-Path $godotLogDirectory "godot-$($preset[1]).err.log"
         $process = Start-Process -FilePath $Godot -ArgumentList @('--headless', '--path',
             (Join-Path $repository 'godot_master'), '--export-release', ('"' + $preset[0] + '"'), $output) `
             -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr
