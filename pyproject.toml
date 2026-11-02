@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codex-agent-harness"
+version = "0.1.0"
+description = "Managed Codex CLI launcher and central dashboard"
+requires-python = ">=3.10"
+dependencies = ["psutil>=5.9,<8", "websockets>=13,<18"]
+
+[project.optional-dependencies]
+master = ["fastapi>=0.110,<1", "uvicorn>=0.29,<1", "pydantic>=2,<3"]
+
+[project.scripts]
+codex-agent-harness = "codex_agent_harness.agent:main"
+codex-agent-harness-master = "codex_agent_harness.master:main"
+
+[tool.setuptools.packages.find]
+include = ["codex_agent_harness*"]
+
+[tool.setuptools.package-data]
+codex_agent_harness = ["static/*.html"]
+

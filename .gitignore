@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.egg-info/
+build/
+dist/
+.previous-build-cache*/
+godot_master/.godot/

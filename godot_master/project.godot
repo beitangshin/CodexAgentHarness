@@ -1,0 +1,21 @@
+config_version=5
+
+[application]
+
+config/name="CodexAgentHarness Desktop"
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=1500
+window/size/viewport_height=920
+window/size/window_width_override=1500
+window/size/window_height_override=920
+window/stretch/mode="canvas_items"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.035, 0.055, 0.079, 1)

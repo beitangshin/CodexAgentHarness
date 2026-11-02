@@ -1,0 +1,12 @@
+[Unit]
+Description=CodexAgentHarness VDI Agent
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/codex-agent-harness/agent.env
+ExecStart=%h/.local/bin/codex-agent-harness --headless
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

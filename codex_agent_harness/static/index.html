@@ -1,0 +1,1441 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>CodexAgentHarness · 中控台</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+      background: #0b1017;
+      color: #e8edf4;
+      --surface: #121a24;
+      --surface-raised: #17212d;
+      --border: #263442;
+      --muted: #91a2b3;
+      --accent: #68dec9;
+      --accent-soft: #163b37;
+      --danger: #f0a2a9;
+      --warning: #f2c77b;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; min-height: 100vh; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    .sidebar { background: #0e151e; border-right: 1px solid #22303e; display: flex; flex-direction: column; padding: 27px 18px 22px; }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 4px 11px 32px; }
+    .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: linear-gradient(145deg, #63e4cc, #2d978b); color: #092b2a; font-size: 18px; font-weight: 900; box-shadow: 0 8px 28px #0f75653d; }
+    .brand-name { font-weight: 750; letter-spacing: -.035em; font-size: 15px; line-height: 1.1; }
+    .brand-caption { color: #7592a3; font-size: 11px; margin-top: 5px; letter-spacing: .12em; text-transform: uppercase; }
+    .nav-label { color: #64798c; font-size: 11px; font-weight: 750; letter-spacing: .15em; text-transform: uppercase; padding: 4px 13px 12px; }
+    .nav { display: grid; gap: 5px; }
+    .nav-button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 13px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #a4b4c3; text-align: left; font-weight: 600; font-size: 13px; }
+    .nav-button:hover { background: #17222e; color: #e8edf4; }
+    .nav-button.active { background: #1a302f; color: #a4f1e1; border-color: #28504b; }
+    .nav-icon { width: 20px; font-size: 17px; text-align: center; font-weight: 400; }
+    .sidebar-spacer { flex: 1; }
+    .sidebar-status { border: 1px solid #28403e; background: #142522; border-radius: 12px; padding: 15px 14px; }
+    .sidebar-status strong { font-size: 12px; display: flex; align-items: center; gap: 8px; }
+    .sidebar-status p { color: #89a49f; font-size: 11px; line-height: 1.6; margin: 7px 0 0 17px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; flex: 0 0 auto; box-shadow: 0 0 0 4px #68dec91a; }
+    .dot.offline { background: var(--danger); box-shadow: 0 0 0 4px #f0a2a91a; }
+    .sidebar-foot { color: #526779; font-size: 11px; padding: 20px 12px 0; }
+    .main { min-width: 0; }
+    .topbar { height: 76px; border-bottom: 1px solid #22303e; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 clamp(24px, 4vw, 56px); }
+    .crumb { display: flex; align-items: center; gap: 9px; color: #7d91a3; font-size: 12px; }
+    .crumb strong { color: #dce7ed; font-weight: 650; }
+    .top-actions { display: flex; align-items: center; gap: 17px; }
+    .live-label { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .icon-button, .secondary-button, .primary-button { border-radius: 9px; min-height: 36px; padding: 8px 13px; font-size: 12px; font-weight: 700; }
+    .icon-button, .secondary-button { color: #c7d6e0; background: #17232e; border: 1px solid #304250; }
+    .icon-button:hover, .secondary-button:hover { background: #21323f; }
+    .primary-button { color: #072826; background: var(--accent); border: 1px solid var(--accent); }
+    .primary-button:hover { background: #8cebd8; }
+    .page { max-width: 1460px; margin: 0 auto; padding: 40px clamp(24px, 4vw, 56px) 70px; }
+    .page-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .19em; font-size: 11px; font-weight: 800; margin: 0 0 12px; }
+    h1 { font-size: clamp(26px, 2.5vw, 35px); line-height: 1.18; letter-spacing: -.045em; margin: 0; font-weight: 760; }
+    .description { color: var(--muted); margin: 11px 0 0; font-size: 13px; line-height: 1.7; }
+    .status-chip { border: 1px solid #2b4e49; background: #17332f; color: #8ee6d0; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; border-radius: 999px; padding: 8px 12px; font-size: 11px; font-weight: 700; }
+    .status-chip.error { border-color: #68414a; color: #f2b2b7; background: #35222b; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 30px; }
+    .metric { position: relative; min-height: 140px; border: 1px solid var(--border); background: linear-gradient(155deg, #17222e, #111a25); border-radius: 15px; padding: 21px 22px; overflow: hidden; }
+    .metric::after { content: ""; position: absolute; width: 120px; height: 120px; border-radius: 50%; right: -48px; top: -54px; background: #7adcc90a; }
+    .metric-icon { display: grid; place-items: center; width: 31px; height: 31px; border: 1px solid #31534f; background: #183d37; border-radius: 9px; color: var(--accent); font-size: 16px; }
+    .metric.warning .metric-icon { color: var(--warning); background: #433822; border-color: #685333; }
+    .metric-value { display: block; font-size: 29px; letter-spacing: -.055em; line-height: 1; margin: 17px 0 7px; }
+    .metric-label { color: #a5b6c3; font-size: 12px; }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 14px; }
+    h2 { font-size: 16px; letter-spacing: -.025em; margin: 0; }
+    h3 { font-size: 14px; margin: 0; }
+    .subtle { color: var(--muted); font-size: 12px; }
+    .overview-grid { display: grid; grid-template-columns: minmax(310px, .85fr) minmax(0, 1.35fr); gap: 18px; align-items: start; }
+    .panel { border: 1px solid var(--border); border-radius: 15px; background: var(--surface); min-width: 0; overflow: hidden; }
+    .panel-header { padding: 20px 21px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .panel-header p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .machine-list { padding: 9px; max-height: 650px; overflow-y: auto; }
+    .machine-item { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; border: 1px solid transparent; border-radius: 10px; background: transparent; color: inherit; padding: 13px 12px; }
+    .machine-item:hover { background: #1a2833; }
+    .machine-item.selected { background: #1c3334; border-color: #2b5b55; }
+    .machine-avatar { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: #22313d; color: #a7c9d1; font-size: 16px; flex: 0 0 auto; }
+    .machine-item.selected .machine-avatar { color: #8ee6d0; background: #24504a; }
+    .machine-item-main { flex: 1; min-width: 0; }
+    .machine-item-main strong { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .machine-item-main small { display: block; font-size: 11px; color: #8fa4b3; margin-top: 6px; }
+    .machine-agent-strip { display: flex; gap: 8px; overflow-x: auto; max-width: 100%; margin-top: 10px; padding-bottom: 3px; }
+    .machine-agent-chip { flex: 0 0 112px; min-width: 0; border: 1px solid #294252; border-radius: 8px; padding: 4px; background: #10232b; }
+    .machine-agent-chip .agent-animation { margin: 0 auto; }
+    .machine-agent-chip span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: #b8d4dc; text-align: center; }
+    .machine-item-arrow { color: #667c8d; font-size: 17px; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight: 750; white-space: nowrap; background: #2a3948; color: #c2d0dc; }
+    .pill::before { content: ""; display: block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .pill.online, .pill.working { color: #84dec4; background: #183a34; }
+    .pill.attention { color: #f4ca81; background: #443521; }
+    .pill.offline, .pill.error { color: #f0a7af; background: #432833; }
+    .pill.idle { color: #a4c6e5; background: #25384b; }
+    .detail-body { padding: 23px; }
+    .detail-title { display: flex; align-items: start; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+    .detail-title h2 { font-size: 19px; }
+    .detail-title p { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+    .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 22px 0 27px; }
+    .fact { padding: 14px; background: #182330; border: 1px solid #263847; border-radius: 10px; min-width: 0; }
+    .fact span { color: #8da2b4; display: block; font-size: 11px; margin-bottom: 8px; }
+    .fact strong { font-size: 13px; overflow-wrap: anywhere; }
+    .instance-heading { border-top: 1px solid var(--border); padding-top: 22px; margin-bottom: 13px; display: flex; justify-content: space-between; align-items: center; }
+    .instance-list { display: grid; gap: 9px; }
+    .instance-card { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid #2a3948; background: #18232f; color: inherit; text-align: left; border-radius: 10px; }
+    .instance-card:hover { background: #20303d; }
+    .instance-card.selected { border-color: #438a7d; background: #1b3435; }
+    .instance-card-main { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .instance-card-main > div:last-child { min-width: 0; flex: 1; }
+    .agent-animation { flex: 0 0 84px; width: 84px; height: 67px; overflow: hidden; }
+    .agent-animation svg { width: 100%; height: 100%; display: block; }
+    .agent-animation .rest-person, .agent-animation .rest-bubble, .agent-animation .alert-mark { display: none; }
+    .agent-animation.idle .work-person, .agent-animation.idle .work-hand { display: none; }
+    .agent-animation.idle .rest-person, .agent-animation.idle .rest-bubble { display: block; }
+    .agent-animation.attention .alert-mark { display: block; animation: agent-alert 1s ease-in-out infinite; animation-delay: var(--phase); }
+    .agent-animation.working .work-hand { transform-origin: 42px 42px; animation: agent-typing .42s ease-in-out infinite alternate; animation-delay: var(--phase); }
+    .agent-animation.working .work-person { animation: agent-focus 1.6s ease-in-out infinite alternate; animation-delay: var(--phase); }
+    .agent-animation.idle .rest-person { animation: agent-rest 2.8s ease-in-out infinite alternate; animation-delay: var(--phase); }
+    .agent-animation.idle .rest-bubble { animation: agent-float 2.8s ease-in-out infinite; animation-delay: var(--phase); }
+    .agent-animation.starting .screen-line { animation: agent-alert 1s ease-in-out infinite; animation-delay: var(--phase); }
+    .agent-animation.offline, .agent-animation.exited, .agent-animation.error { filter: grayscale(.8); opacity: .62; }
+    @keyframes agent-typing { to { transform: translateY(3px) rotate(5deg); } }
+    @keyframes agent-focus { to { transform: translateX(1px); } }
+    @keyframes agent-rest { to { transform: translateY(-2px) rotate(-2deg); } }
+    @keyframes agent-float { 50% { transform: translateY(-5px); opacity: .65; } }
+    @keyframes agent-alert { 50% { opacity: .28; } }
+    @media (prefers-reduced-motion: reduce) { .agent-animation * { animation: none !important; } }
+    .instance-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 8px; }
+    .instance-actions button { border: 1px solid #3a5960; border-radius: 6px; background: #213640; color: #bdece1; padding: 5px 8px; font-size: 11px; }
+    .instance-actions button:hover { background: #2b4c52; }
+    .instance-actions button:disabled, .command-form button:disabled { opacity: .5; cursor: not-allowed; }
+    .command-form { border-top: 1px solid var(--border); margin-top: 22px; padding-top: 20px; }
+    .command-form h3 { margin-bottom: 11px; }
+    .command-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .command-row input { flex: 1; min-width: 180px; }
+    .command-row select { min-width: 155px; }
+    .task-form { border-top: 1px solid var(--border); margin-top: 22px; padding-top: 20px; }
+    .task-form h3 { margin-bottom: 8px; }
+    .task-form p { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+    .task-form textarea { display: block; width: 100%; min-height: 76px; resize: vertical; font: inherit; line-height: 1.5; }
+    .task-form button { margin-top: 9px; }
+    .task-form button:disabled { opacity: .5; cursor: not-allowed; }
+    .command-history { border-top: 1px solid var(--border); margin-top: 22px; padding-top: 20px; }
+    .command-history h3 { margin-bottom: 10px; }
+    .command-history p { color: var(--muted); font-size: 11px; margin: 7px 0; overflow-wrap: anywhere; }
+    .instance-card strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
+    .instance-card small { display: block; color: #8da1b2; font-size: 11px; margin-top: 7px; line-height: 1.5; overflow-wrap: anywhere; }
+    .instance-end { text-align: right; }
+    .instance-end small { white-space: nowrap; }
+    .activity-heading { border-top: 1px solid var(--border); padding-top: 22px; margin: 23px 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .activity-feed { max-height: 420px; overflow-y: auto; display: grid; gap: 9px; align-content: start; }
+    .activity-entry { border: 1px solid #2a3948; background: #101a25; border-radius: 10px; padding: 12px 14px; min-width: 0; }
+    .activity-entry strong { color: #8ee6d0; font-size: 11px; }
+    .activity-entry span { color: var(--muted); font-size: 11px; margin-left: 8px; }
+    .activity-entry pre { padding: 0; margin: 8px 0 0; color: #cfdae2; font-size: 12px; line-height: 1.55; }
+    .workbench-page { max-width: 1900px; padding-top: 24px; }
+    .workbench-page .page-heading { margin-bottom: 18px; }
+    .workbench-page .detail-body { padding: 18px; }
+    .workbench-page .detail-title { margin-bottom: 15px; }
+    .workspace-grid { display: grid; grid-template-columns: minmax(200px, 230px) minmax(470px, 1fr) minmax(230px, 270px); gap: 20px; align-items: start; }
+    .workspace-column { min-width: 0; }
+    .workspace-column > h3 { margin: 0 0 12px; }
+    .workspace-instance-list { max-height: calc(100vh - 300px); overflow-y: auto; }
+    .workspace-instance-list .instance-card { display: block; margin-bottom: 8px; }
+    .workspace-instance-list .instance-end { text-align: left; margin-top: 10px; display: flex; justify-content: space-between; }
+    .workspace-instance-list .instance-actions { display: none; }
+    .workspace-conversation { border: 1px solid var(--border); border-radius: 12px; background: #0e1721; padding: 17px; display: flex; flex-direction: column; height: max(500px, calc(100vh - 315px)); }
+    .workspace-conversation .activity-heading { border-top: 0; margin: 0 0 14px; padding: 0; }
+    .workspace-conversation .activity-feed { flex: 1; min-height: 150px; height: auto; max-height: none; padding-right: 4px; }
+    .workspace-conversation .task-form { margin-top: 16px; flex: 0 0 auto; }
+    .workspace-settings { border: 1px solid var(--border); border-radius: 12px; background: #121d28; padding: 17px; }
+    .workspace-settings .command-form { margin-top: 20px; }
+    .workspace-settings .command-row { display: grid; }
+    .workspace-settings .command-row input, .workspace-settings .command-row select { min-width: 0; width: 100%; }
+    .workspace-settings .command-history { margin-top: 20px; }
+    .settings-field-label { color: var(--muted); font-size: 11px; margin-top: 8px; }
+    .model-summary { font-size: 12px; color: #9ddbd1; margin: 3px 0 9px; }
+    .directory-browser { border: 1px solid var(--border); border-radius: 9px; padding: 8px; max-height: 245px; overflow-y: auto; background: #0c1822; }
+    .directory-browser button { display: block; width: 100%; margin: 3px 0; text-align: left; border: 0; border-radius: 6px; background: transparent; color: #dcebf2; padding: 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+    .directory-browser button:hover { background: #1d3542; }
+    .directory-browser [hidden] { display: none !important; }
+    .directory-browser .browser-path { overflow-wrap: anywhere; font-size: 11px; color: #8fb2c5; margin: 4px 0; }
+    .browser-hidden-toggle { display: flex; align-items: center; gap: 8px; margin: 8px 0; color: #9fb8c5; font-size: 12px; cursor: pointer; }
+    .browser-hidden-toggle input { accent-color: #62d8bf; }
+    .permission-form { display: grid; gap: 10px; }
+    .permission-form select { width: 100%; }
+    .permission-form p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .permission-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    .permission-actions button { flex: 1; }
+    .approval-list { display: grid; gap: 10px; margin-bottom: 15px; max-height: 220px; overflow-y: auto; flex: 0 0 auto; }
+    .approval-card { border: 1px solid #806440; border-radius: 11px; background: #30251d; padding: 14px; }
+    .approval-card strong { color: #ffdc9c; font-size: 13px; }
+    .approval-card p { color: #e0cab1; font-size: 12px; line-height: 1.55; margin: 8px 0; }
+    .approval-card pre { font-size: 12px; background: #1d1c1c; border-radius: 7px; max-height: 180px; overflow-y: auto; }
+    .approval-actions { display: flex; gap: 8px; margin-top: 11px; }
+    .terminal-approval { color: #f2c77b; font-size: 12px; padding: 12px; border: 1px solid #806440; border-radius: 8px; margin-bottom: 14px; }
+    .empty { padding: 42px 24px; text-align: center; color: var(--muted); }
+    .empty-symbol { width: 46px; height: 46px; margin: 0 auto 14px; border-radius: 13px; display: grid; place-items: center; background: #20313b; color: #83adbd; font-size: 23px; }
+    .empty strong { color: #dce8ee; display: block; font-size: 14px; }
+    .empty p { margin: 8px auto 0; font-size: 12px; line-height: 1.65; max-width: 320px; }
+    .notice { border: 1px solid #715735; background: #35291d; border-radius: 10px; padding: 12px 15px; color: #f1d19d; font-size: 12px; line-height: 1.5; margin-bottom: 18px; }
+    .notice[hidden] { display: none; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 16px; }
+    .search, .select, .field { min-height: 38px; background: #17232f; border: 1px solid #2f4150; border-radius: 9px; color: #e5edf3; padding: 9px 12px; font-size: 12px; }
+    .search { flex: 1; min-width: 230px; }
+    .search::placeholder, .field::placeholder { color: #728799; }
+    .select { min-width: 130px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th { color: #718a9b; text-align: left; font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .09em; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    td { font-size: 12px; color: #c5d4df; padding: 17px 20px; border-bottom: 1px solid #22303d; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #172430; }
+    .table-host { font-weight: 750; color: #ebf2f5; display: block; }
+    .table-sub { color: #7f95a6; display: block; font-size: 11px; margin-top: 6px; }
+    .text-button { border: 0; color: var(--accent); background: transparent; padding: 4px; font-size: 12px; font-weight: 700; }
+    .text-button:hover { text-decoration: underline; }
+    .setup-grid { display: grid; grid-template-columns: minmax(280px, .78fr) minmax(0, 1.22fr); gap: 18px; align-items: start; }
+    .setup-card { padding: 22px; }
+    .setup-card + .setup-card { margin-top: 16px; }
+    .setup-card h2 { margin-bottom: 8px; }
+    .setup-card p { color: var(--muted); font-size: 12px; line-height: 1.7; margin: 0 0 18px; }
+    .setup-line { display: flex; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid #263544; font-size: 12px; }
+    .setup-line:last-child { border-bottom: 0; }
+    .setup-line span { color: #8ea4b4; }
+    .setup-line strong { font-weight: 650; overflow-wrap: anywhere; text-align: right; }
+    .address-row { display: flex; gap: 8px; }
+    .address-row .select { flex: 1; min-width: 0; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin: 16px 0 20px; }
+    label { display: block; color: #9eb1bf; font-size: 11px; font-weight: 700; }
+    label .field { display: block; width: 100%; margin-top: 8px; }
+    .step { display: flex; gap: 12px; align-items: start; margin-bottom: 20px; }
+    .step-number { display: grid; place-items: center; width: 25px; height: 25px; flex: 0 0 auto; background: #205149; color: #b6f2e6; border-radius: 7px; font-size: 11px; font-weight: 800; }
+    .step h3 { margin: 3px 0 7px; }
+    .step p { margin: 0 0 11px; }
+    .code-block { background: #0b141d; border: 1px solid #293947; border-radius: 10px; overflow: hidden; margin-top: 9px; }
+    .code-head { border-bottom: 1px solid #263645; display: flex; justify-content: space-between; align-items: center; padding: 8px 11px 8px 14px; color: #879cad; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+    .copy { border: 0; background: #203440; color: #c7e8e2; border-radius: 6px; padding: 5px 9px; font-size: 10px; font-weight: 700; }
+    .copy:hover { background: #2b4c52; }
+    pre { margin: 0; overflow-x: auto; overflow-wrap: anywhere; white-space: pre-wrap; padding: 15px; font-size: 11px; line-height: 1.75; color: #b7d9d9; font-family: Consolas, "Cascadia Code", monospace; }
+    .hint { padding: 12px 14px; border-left: 2px solid #6acdbd; background: #17302f; color: #a9d8d2; font-size: 11px; line-height: 1.65; border-radius: 0 8px 8px 0; }
+    .toast { position: fixed; bottom: 23px; right: 23px; background: #27524a; border: 1px solid #4a8a7e; color: #dcfff5; border-radius: 9px; padding: 11px 15px; font-size: 12px; box-shadow: 0 16px 40px #0006; z-index: 10; }
+    @media (max-width: 1250px) { .workspace-grid { grid-template-columns: 230px minmax(0,1fr); } .workspace-settings { grid-column: 1 / -1; } }
+    @media (max-width: 1100px) { .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); } .overview-grid, .setup-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { padding: 12px 16px; border-right: 0; border-bottom: 1px solid #22303e; display: block; }
+      .brand { padding: 0 0 12px; }
+      .nav { display: flex; gap: 5px; }
+      .nav-button { width: auto; padding: 9px 10px; font-size: 12px; }
+      .nav-label, .sidebar-spacer, .sidebar-status, .sidebar-foot { display: none; }
+      .topbar { height: 56px; padding: 0 18px; }
+      .page { padding: 27px 18px 50px; }
+      .page-heading { align-items: start; }
+      .status-chip { display: none; }
+      .live-label { display: none; }
+      .field-grid { grid-template-columns: 1fr; }
+      .workspace-grid { grid-template-columns: 1fr; }
+      .workspace-settings { grid-column: auto; }
+      .workspace-instance-list { max-height: 250px; }
+      .workspace-conversation { height: 600px; }
+    }
+    @media (max-width: 440px) { .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; } .metric { min-height: 120px; padding: 15px; } .metric-value { font-size: 24px; } .fact { padding: 10px; } .facts { gap: 6px; } .fact strong { font-size: 11px; } }
+    /* Console layout: focused workbench, compact fleet overview, optional inspector. */
+    :root { background: #0d1117; color: #e6edf3; --surface: #151c24; --surface-raised: #1c2630; --border: #293642; --muted: #93a4b2; --accent: #68d9bd; --accent-soft: #173c35; }
+    .app { grid-template-columns: 218px minmax(0, 1fr); }
+    .sidebar { background: #10161e; padding: 21px 12px 17px; }
+    .brand { padding: 5px 9px 27px; gap: 10px; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 9px; box-shadow: none; }
+    .brand-name { font-size: 13px; }
+    .brand-caption { font-size: 10px; letter-spacing: .1em; }
+    .nav-button { padding: 11px 13px; border-radius: 8px; }
+    .nav-button.active { background: #1b322e; border-color: #2c5a50; }
+    .topbar { height: 62px; padding: 0 28px; background: #0f151c; }
+    .page { padding-top: 31px; }
+    .page-heading { margin-bottom: 23px; }
+    h1 { font-size: clamp(25px, 2.2vw, 31px); }
+    .eyebrow { margin-bottom: 9px; letter-spacing: .12em; }
+    .panel { border-radius: 12px; }
+    .metrics { gap: 12px; margin-bottom: 23px; }
+    .metric { min-height: 118px; padding: 17px 18px; border-radius: 11px; background: #151e27; }
+    .metric::after { display: none; }
+    .metric-icon { width: 27px; height: 27px; border-radius: 7px; font-size: 14px; }
+    .metric-value { margin: 13px 0 6px; font-size: 28px; }
+    .overview-grid { grid-template-columns: minmax(310px, .9fr) minmax(0, 1.3fr); gap: 14px; }
+    .priority-list { padding: 8px; min-height: 172px; max-height: 520px; overflow-y: auto; }
+    .priority-item { display: flex; align-items: center; width: 100%; gap: 12px; padding: 13px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: inherit; text-align: left; }
+    .priority-item:hover { background: #202c36; border-color: #33434f; }
+    .priority-icon { display: grid; place-items: center; width: 29px; height: 29px; flex: 0 0 auto; border-radius: 8px; color: #ffcc80; background: #433624; font-weight: 800; }
+    .priority-icon.error { color: #f2aab2; background: #432832; }
+    .priority-main { min-width: 0; flex: 1; }
+    .priority-main strong { display: block; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .priority-main small { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .priority-arrow { color: #9db3c0; }
+    .machine-item.selected { background: #1d302f; }
+    .workbench-page { max-width: none; padding: 22px 26px 26px; }
+    .workbench-page .page-heading { margin-bottom: 13px; }
+    .workbench-page .eyebrow { display: none; }
+    .workbench-page .description { margin-top: 4px; }
+    .workbench-page #detail-panel { border: 0; background: transparent; overflow: visible; }
+    .workbench-page .detail-body { padding: 0; }
+    .workbench-page .detail-title { align-items: center; background: #151d25; border: 1px solid var(--border); border-radius: 11px; padding: 13px 16px; margin: 0 0 13px; }
+    .detail-title h2 { font-size: 17px; }
+    .detail-title p { margin-top: 4px; }
+    .detail-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    .detail-actions .select { min-width: 175px; }
+    .detail-actions .pill { margin: 0 4px; }
+    .workspace-grid { grid-template-columns: 228px minmax(0, 1fr); gap: 13px; position: relative; }
+    .workspace-grid.settings-open { grid-template-columns: 228px minmax(0, 1fr) 290px; }
+    .workspace-column > h3 { color: #bccbd4; font-size: 12px; letter-spacing: .035em; padding: 9px 8px 0; }
+    .workspace-instance-list { display: block; max-height: calc(100vh - 252px); padding-right: 3px; }
+    .workspace-instance-list .instance-card { border-color: transparent; background: transparent; border-radius: 8px; margin: 0 0 4px; padding: 12px 11px; }
+    .workspace-instance-list .instance-card:hover { background: #1d2933; }
+    .workspace-instance-list .instance-card.selected { background: #1c302e; border-color: #34685d; }
+    .workspace-instance-list .instance-card strong { font-size: 12px; }
+    .workspace-instance-list .instance-card small { font-size: 10px; }
+    .workspace-instance-list .instance-end { margin-top: 9px; }
+    .workspace-conversation { height: max(540px, calc(100vh - 258px)); padding: 0; border-radius: 11px; background: #141c24; }
+    .workspace-conversation .activity-heading { margin: 0; padding: 15px 18px; border-bottom: 1px solid var(--border); }
+    .activity-title { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .activity-title h3 { font-size: 15px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .activity-title .subtle { font-size: 11px; }
+    .feed-tabs { display: inline-flex; border: 1px solid #34434e; background: #101820; border-radius: 8px; padding: 2px; flex: 0 0 auto; }
+    .feed-tab { color: #9eb1be; border: 0; border-radius: 6px; background: transparent; padding: 5px 10px; font-size: 11px; }
+    .feed-tab:hover { color: #e5eef4; }
+    .feed-tab.active { background: #2a3b46; color: #e7f6f1; }
+    .workspace-conversation > .subtle { margin: 11px 18px 0; overflow-wrap: anywhere; font-size: 11px; }
+    .workspace-conversation .activity-feed { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 18px; }
+    .activity-entry { border-radius: 9px; padding: 12px 14px; }
+    .activity-entry strong { font-size: 11px; }
+    .activity-entry pre { font-size: 12px; line-height: 1.6; }
+    .activity-entry.message-user { margin-left: auto; max-width: 84%; background: #1d3935; border-color: #315f55; }
+    .activity-entry.message-user strong { color: #a5efdd; }
+    .activity-entry.message-agent { background: #19232c; border-color: #2b3a46; }
+    .activity-entry.tool-entry { background: #101820; border-color: #273640; border-left: 3px solid #527083; }
+    .activity-entry.tool-entry strong { color: #a9bfcb; }
+    .activity-entry.live-entry { border-color: #3f796d; }
+    .workspace-conversation .approval-list { margin: 12px 18px 0; max-height: 240px; }
+    .approval-card { background: #30271f; border-color: #7d6140; }
+    .workspace-conversation .task-form { margin: 0; padding: 13px 18px 17px; background: #19232c; border-top: 1px solid var(--border); }
+    .task-form h3 { font-size: 12px; margin-bottom: 4px; }
+    .task-form p { margin: 0 0 10px; font-size: 11px; }
+    .task-form textarea { min-height: 75px; max-height: 180px; background: #101922; font-size: 13px; }
+    .task-form button { margin-top: 10px; }
+    .workspace-settings { max-height: max(540px, calc(100vh - 258px)); overflow-y: auto; padding: 0 15px 15px; border-radius: 11px; }
+    .settings-heading { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; margin: 0 -15px 17px; padding: 13px 15px; background: #17222c; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 750; }
+    .settings-close { border: 0; background: transparent; color: #9fb1be; font-size: 19px; line-height: 1; }
+    .settings-close:hover { color: white; }
+    .permission-form, .command-form, .command-history { font-size: 12px; }
+    .workspace-settings .command-row { gap: 9px; }
+    .workspace-settings .permission-actions { margin-top: 3px; }
+    .command-history .history-item { border-left: 2px solid #435565; padding: 5px 0 5px 9px; margin: 7px 0; line-height: 1.55; }
+    .command-history .history-item.failed { border-color: #d7848e; color: #efb0b8; }
+    .command-history .history-item.succeeded { border-color: #67c9aa; color: #b3ddcf; }
+    @media (max-width: 1340px) {
+      .workspace-grid.settings-open { grid-template-columns: 228px minmax(0, 1fr); }
+      .workspace-grid.settings-open .workspace-settings { position: absolute; top: 0; right: 0; width: 315px; max-width: calc(100% - 230px); z-index: 4; box-shadow: -18px 20px 45px #0009; grid-column: auto; }
+    }
+    @media (max-width: 950px) {
+      .overview-grid { grid-template-columns: 1fr; }
+      .workspace-grid, .workspace-grid.settings-open { grid-template-columns: 1fr; }
+      .workspace-instance-list { max-height: 205px; }
+      .workspace-grid.settings-open .workspace-settings { position: static; width: auto; max-width: none; grid-column: auto; box-shadow: none; }
+      .workspace-conversation { height: 620px; }
+    }
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { padding: 12px 16px; }
+      .topbar { height: 54px; padding: 0 17px; }
+      .workbench-page { padding: 21px 15px 34px; }
+      .workbench-page .detail-title { align-items: stretch; flex-direction: column; }
+      .detail-actions { justify-content: flex-start; }
+      .detail-actions .select { flex: 1; min-width: 150px; }
+      .workspace-conversation { height: 610px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">C</div><div><div class="brand-name">CodexAgentHarness</div><div class="brand-caption">LOCAL CONTROL</div></div></div>
+      <div class="nav-label">工作区</div>
+      <nav class="nav" aria-label="主导航">
+        <button class="nav-button active" data-view="overview" type="button"><span class="nav-icon">▦</span>运行总览</button>
+        <button class="nav-button" data-view="workbench" type="button"><span class="nav-icon">◈</span>实例工作台</button>
+        <button class="nav-button" data-view="machines" type="button"><span class="nav-icon">▤</span>机器列表</button>
+        <button class="nav-button" data-view="setup" type="button"><span class="nav-icon">＋</span>接入 Agent</button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-status"><strong><span class="dot" id="sidebar-dot"></span><span id="sidebar-status">正在连接 Master</span></strong><p>VDI Agent 通过 SSH 隧道向这台 Laptop 上报。</p></div>
+      <div class="sidebar-foot">CodexAgentHarness · 本机中控台</div>
+    </aside>
+    <div class="main">
+      <header class="topbar"><div class="crumb">CodexAgentHarness <span>／</span> <strong id="crumb-name">运行总览</strong></div><div class="top-actions"><select class="select" id="language-select" aria-label="界面语言" style="width:108px"><option value="zh">中文</option><option value="en">English</option></select><span class="live-label" id="last-refresh">正在读取状态…</span><button class="icon-button" id="refresh-button" type="button">↻ &nbsp;刷新</button></div></header>
+      <section class="page" id="view-overview">
+        <div class="page-heading"><div><p class="eyebrow">LIVE OPERATIONS</p><h1>运行总览</h1><p class="description">集中查看每台机器上的 Codex CLI 实例与最近状态。</p></div><span class="status-chip" id="live-chip"><span class="dot"></span><span>正在连接</span></span></div>
+        <div class="notice" id="error-notice" hidden></div>
+        <div class="metrics" id="metrics"></div>
+        <div class="overview-grid">
+          <section class="panel priority-panel"><div class="panel-header"><div><h2>需要处理</h2><p>优先查看等待审批或异常的实例</p></div><span class="subtle" id="attention-count">0 项</span></div><div class="priority-list" id="priority-list"></div></section>
+          <section class="panel"><div class="panel-header"><div><h2>已接入机器</h2><p>选择机器进入实例工作台</p></div><button class="text-button" data-view="machines" type="button">查看全部 →</button></div><div class="machine-list" id="machine-list"></div></section>
+        </div>
+      </section>
+      <section class="page workbench-page" id="view-workbench" hidden>
+        <div class="page-heading"><div><p class="eyebrow">INSTANCE WORKBENCH</p><h1>实例工作台</h1><p class="description">在这里查看完整活动、继续对话、处理审批并管理项目权限。</p></div></div>
+        <section class="panel" id="detail-panel"></section>
+      </section>
+      <section class="page" id="view-machines" hidden>
+        <div class="page-heading"><div><p class="eyebrow">AGENT FLEET</p><h1>机器列表</h1><p class="description">按机器、项目或状态查找正在上报的 Agent。</p></div><button class="primary-button" data-view="setup" type="button">＋ 接入新 Agent</button></div>
+        <div class="toolbar"><input class="search" id="machine-search" type="search" placeholder="搜索机器名或项目名" aria-label="搜索机器或项目"><select class="select" id="machine-filter" aria-label="按状态筛选"><option value="all">全部状态</option><option value="online">在线</option><option value="offline">离线</option><option value="attention">需要处理</option></select></div>
+        <section class="panel table-wrap"><table><thead><tr><th>机器</th><th>连接状态</th><th>Codex 实例</th><th>工作中</th><th>最近上报</th><th></th></tr></thead><tbody id="machine-table"></tbody></table><div id="table-empty" hidden></div></section>
+      </section>
+      <section class="page" id="view-setup" hidden>
+        <div class="page-heading"><div><p class="eyebrow">AGENT ONBOARDING</p><h1>接入 Agent</h1><p class="description">每台 VDI 运行一个采集 Agent；它会汇总该机器的所有受管 Codex 实例。</p></div></div>
+        <section class="panel setup-card" style="margin-bottom:18px"><h2>本机程序配置</h2><p>已自动搜索 Master 所在机器的程序。仅在缺失时手动填写路径；其他机器请在各自的 Slave 窗口配置。</p><p class="hint" id="local-tool-detection">正在搜索本机程序…</p><div class="field-grid">
+          <label>Codex CLI 路径<input class="field" id="local-tool-codex" list="local-tool-codex-options" spellcheck="false"><datalist id="local-tool-codex-options"></datalist></label>
+          <label>终端程序路径<input class="field" id="local-tool-terminal" list="local-tool-terminal-options" spellcheck="false"><datalist id="local-tool-terminal-options"></datalist></label>
+          <label>SSH 客户端路径<input class="field" id="local-tool-ssh" list="local-tool-ssh-options" spellcheck="false"><datalist id="local-tool-ssh-options"></datalist></label>
+        </div><p class="hint" id="local-tool-hint">Windows 可选 windows-console（系统新控制台）、powershell.exe、pwsh.exe 或 wt.exe；Linux 可选 x-terminal-emulator、gnome-terminal、konsole、xfce4-terminal 或 xterm。</p><button class="primary-button" id="save-local-tools" type="button">保存本机程序</button></section>
+        <div class="setup-grid"><div>
+          <section class="panel setup-card"><h2>这台 Laptop</h2><p>下面的地址来自本机网络接口。请选择从 VDI 验证可达的地址，或在连接参数中填写能解析到 VPN 地址的内网 DNS 名称。</p><div class="setup-line"><span>主机名</span><strong id="master-hostname">读取中…</strong></div><div class="setup-line"><span>Master API</span><strong id="master-api">127.0.0.1</strong></div><div class="setup-line"><span>SSH 服务</span><strong id="master-ssh">检测中…</strong></div><div style="margin-top:17px"><label for="address-select">候选内网地址</label><div class="address-row" style="margin-top:8px"><select class="select" id="address-select" aria-label="选择 Laptop 内网地址"><option value="">正在读取…</option></select><button class="secondary-button" id="refresh-addresses" type="button">重新检测</button></div></div></section>
+          <section class="panel setup-card"><h2>连接参数</h2><p>填入 VDI 将使用的 SSH 用户、别名和 Laptop 地址或内网名称，即可生成配置模板。上报令牌需要在 VDI 上单独设置。</p><div class="field-grid"><label>SSH 主机别名<input class="field" id="setup-alias" value="codex-harness-laptop" spellcheck="false"></label><label>Windows SSH 用户<input class="field" id="setup-user" placeholder="你的 SSH 用户名" spellcheck="false"></label><label>VDI 私钥路径<input class="field" id="setup-key" value="~/.ssh/codex-agent-harness" spellcheck="false"></label><label>Laptop 地址或 DNS 名称<input class="field" id="setup-host" placeholder="如 laptop.internal.example" spellcheck="false"></label></div><div class="hint">身份由 SSH 主机密钥和 Agent 私钥确认。地址或 DNS 名称只用于找到 Laptop。</div></section>
+        </div><section class="panel setup-card"><h2>VDI 接入步骤</h2><p>先在 Laptop 上启动 Master，再在 VDI 完成 SSH 密钥授权和主机指纹核对。</p>
+          <div class="step"><span class="step-number">1</span><div style="min-width:0;flex:1"><h3>配置 SSH 主机</h3><p>把下面内容加入 VDI 的 <code>~/.ssh/config</code>。如果内网 DNS 会随 VPN 地址更新，HostName 可以使用 DNS 名称。</p><div class="code-block"><div class="code-head">~/.ssh/config <button class="copy" data-copy="ssh-config" type="button">复制</button></div><pre><code id="ssh-config"></code></pre></div></div></div>
+          <div class="step"><span class="step-number">2</span><div style="min-width:0;flex:1"><h3>核对主机密钥并测试登录</h3><p>先在 Laptop 上读取 SSH 指纹，再在 VDI 对比。匹配后记录主机密钥；确保 SSH 密钥可无密码提示地登录。</p><div class="code-block"><div class="code-head">Laptop PowerShell <button class="copy" data-copy="laptop-fingerprint" type="button">复制</button></div><pre><code id="laptop-fingerprint">ssh-keyscan -T 5 -t ed25519 127.0.0.1 2&gt;$null | ssh-keygen -lf - -E sha256</code></pre></div><div class="code-block"><div class="code-head">VDI 终端 <button class="copy" data-copy="ssh-verify" type="button">复制</button></div><pre><code id="ssh-verify"></code></pre></div></div></div>
+          <div class="step" style="margin-bottom:0"><span class="step-number">3</span><div style="min-width:0;flex:1"><h3>启动采集 Agent</h3><p>填入与 Laptop Master 一致的 REPORT_TOKEN；上报成功后机器会自动出现在总览。</p><div class="code-block"><div class="code-head">VDI 终端 <button class="copy" data-copy="agent-command" type="button">复制</button></div><pre><code id="agent-command"></code></pre></div></div></div>
+        </section></div>
+      </section>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script>
+    const pageUrl = new URL(window.location.href);
+    if (pageUrl.username || pageUrl.password) history.replaceState(null, "", pageUrl.pathname + pageUrl.search + pageUrl.hash);
+    function savedSelection(key) { try { return localStorage.getItem(key); } catch { return null; } }
+    function saveSelection(key, value) { try { localStorage.setItem(key, value); } catch {} }
+    const translations = {
+      "本机中控台":"Local control", "运行总览":"Overview", "实例工作台":"Instance workbench", "机器列表":"Machines", "接入 Agent":"Connect Agent",
+      "正在连接 Master":"Connecting to Master", "Master 正在运行":"Master running", "Master 连接异常":"Master disconnected",
+      "VDI Agent 通过 SSH 隧道向这台 Laptop 上报。":"VDI Agents report to this laptop through SSH tunnels.",
+      "正在读取状态…":"Loading status…", "刷新":"Refresh", "实时同步中":"Live sync", "连接中断":"Disconnected", "正在连接":"Connecting",
+      "集中查看每台机器上的 Codex CLI 实例与最近状态。":"View Codex CLI instances and recent status across machines.",
+      "需要处理":"Needs attention", "优先查看等待审批或异常的实例":"Review approvals and errors first",
+      "已接入机器":"Connected machines", "选择机器进入实例工作台":"Select a machine to open its workbench", "查看全部 →":"View all →",
+      "在这里查看完整活动、继续对话、处理审批并管理项目权限。":"View activity, continue conversations, handle approvals, and manage project permissions.",
+      "按机器、项目或状态查找正在上报的 Agent。":"Find reporting Agents by machine, project, or status.",
+      "＋ 接入新 Agent":"＋ Connect new Agent", "搜索机器名或项目名":"Search machine or project", "搜索机器或项目":"Search machine or project",
+      "按状态筛选":"Filter by status", "全部状态":"All statuses", "在线":"Online", "离线":"Offline", "连接状态":"Connection",
+      "机器":"Machine", "Codex 实例":"Codex instances", "工作中":"Working", "最近上报":"Last report",
+      "每台 VDI 运行一个采集 Agent；它会汇总该机器的所有受管 Codex 实例。":"Run one Agent per VDI to collect all managed Codex instances on that machine.",
+      "这台 Laptop":"This laptop", "下面的地址来自本机网络接口。请选择从 VDI 验证可达的地址，或在连接参数中填写能解析到 VPN 地址的内网 DNS 名称。":"These addresses come from local network interfaces. Use an address reachable from the VDI, or an internal DNS name that resolves to the VPN address.",
+      "主机名":"Hostname", "SSH 服务":"SSH service", "候选内网地址":"Candidate internal addresses", "选择 Laptop 内网地址":"Select laptop internal address",
+      "重新检测":"Check again", "连接参数":"Connection settings", "填入 VDI 将使用的 SSH 用户、别名和 Laptop 地址或内网名称，即可生成配置模板。上报令牌需要在 VDI 上单独设置。":"Enter the SSH user, alias, and laptop address or internal name used by the VDI to generate configuration. Set the report token on the VDI separately.",
+      "SSH 主机别名":"SSH host alias", "Windows SSH 用户":"Windows SSH user", "VDI 私钥路径":"VDI private key path", "Laptop 地址或 DNS 名称":"Laptop address or DNS name",
+      "你的 SSH 用户名":"Your SSH username", "如 laptop.internal.example":"e.g. laptop.internal.example",
+      "身份由 SSH 主机密钥和 Agent 私钥确认。地址或 DNS 名称只用于找到 Laptop。":"The SSH host key and Agent private key verify identity. The address or DNS name only locates the laptop.",
+      "VDI 接入步骤":"VDI setup", "先在 Laptop 上启动 Master，再在 VDI 完成 SSH 密钥授权和主机指纹核对。":"Start Master on the laptop, then authorize the SSH key and verify the host fingerprint on the VDI.",
+      "配置 SSH 主机":"Configure SSH host", "把下面内容加入 VDI 的 ":"Add the following to the VDI's ",
+      "核对主机密钥并测试登录":"Verify host key and test login", "先在 Laptop 上读取 SSH 指纹，再在 VDI 对比。匹配后记录主机密钥；确保 SSH 密钥可无密码提示地登录。":"Read the SSH fingerprint on the laptop, compare it on the VDI, then record the host key and test passwordless login.",
+      "启动采集 Agent":"Start collection Agent", "填入与 Laptop Master 一致的 REPORT_TOKEN；上报成功后机器会自动出现在总览。":"Set REPORT_TOKEN to match Laptop Master. The machine appears in Overview after reporting.",
+      "复制":"Copy", "VDI 终端":"VDI terminal", "读取中…":"Loading…", "检测中…":"Checking…", "正在读取…":"Loading…",
+      "在线机器":"Online machines", "受管实例":"Managed instances", "目前没有待处理事项":"Nothing needs attention",
+      "等待审批和异常实例会出现在这里。":"Approvals and errors appear here.", "切换目标机器":"Switch target machine",
+      "本机":"Local", "在线上报":"Reporting", "已离线":"Offline", "个 CLI 进程":"CLI processes", "个实例":"instances",
+      "新建实例":"New instance", "收起设置":"Hide settings", "管理实例":"Manage instance", "从中控启动新实例":"Start a new instance from Master",
+      "VDI 上的工作目录，例如 /home/user/project":"Working directory on VDI, e.g. /home/user/project",
+      "浏览目标机器目录":"Browse target folders", "主目录":"Home folder", "正在读取目标机器目录…":"Reading target folders…",
+      "使用此目录":"Use this folder", "上一级":"Parent folder", "筛选当前目录中的文件夹":"Filter folders in this directory",
+      "显示 . 开头的隐藏文件夹":"Show folders beginning with .", "只显示前 200 个文件夹。":"Showing only the first 200 folders.",
+      "点击上方按钮查询目标机器文件夹。":"Use the buttons above to browse target folders.", "默认配置":"Default settings",
+      "完整访问 · 按需审批":"Full access · approval as needed", "Codex 默认模型":"Codex default model", "Codex 默认力度":"Codex default effort",
+      "沿用 Codex 权限配置":"Use Codex permission settings", "Bypass（绕过沙箱与审批）":"Bypass (skip sandbox and approvals)",
+      "沿用 Codex 配置模型":"Use the model from Codex settings", "沿用模型默认推理力度":"Use the model's default reasoning effort",
+      "启动模型":"Launch model", "推理力度":"Reasoning effort", "启动实例":"Start instance", "暂无受管实例":"No managed instances",
+      "在这台机器的本地界面启动 Codex 实例后会显示在这里。":"Instances launched on this machine will appear here.",
+      "外部 Codex CLI":"External Codex CLI", "状态未确认":"Status unknown", "模型未确认":"Model unknown", "力度未确认":"Effort unknown",
+      "未命名项目":"Unnamed project", "启动中":"Starting", "空闲":"Idle", "待处理":"Needs attention", "未确认":"Unknown",
+      "已退出":"Exited", "错误":"Error", "继续对话":"Continue conversation",
+      "外部 CLI 只能确认进程存活；当前无法读取会话或下达任务。请从中控新建受管实例。":"External CLI monitoring shows only process status. Start a managed instance from Master to interact with it.",
+      "Ctrl+Enter 发送":"Ctrl+Enter to send", "等待互动连接":"Waiting for interaction connection", "请先选择一个实例":"Select an instance first",
+      "若目标终端显示 Folder access，请在实例管理中确认“信任此目录并重启”；其他初始提示请在目标终端处理。":"If the target terminal shows Folder access, use Trust folder and restart in instance management. Handle other prompts in the target terminal.",
+      "输入给这个 Codex 实例的任务":"Enter a task for this Codex instance", "下达任务":"Send task", "实例实时内容":"Live instance activity",
+      "选择实例":"Select instance", "全部":"All", "对话":"Conversation", "工具":"Tools",
+      "暂无活动内容":"No activity", "这是外部启动的 Codex CLI。Master 已发现进程，但不能读取它的实时对话。":"Master found this external Codex CLI but cannot read its conversation.",
+      "在 Codex 终端输入任务后，这里会显示最近的消息和工具执行。":"Recent messages and tool activity appear here after a task is sent.",
+      "当前筛选条件下没有活动。":"No activity matches this filter.", "用户":"User", "正在输出":"Streaming output",
+      "目标机终端":"Target terminal", "Master 任务":"Master task", "命令等待审批":"Command needs approval", "文件修改等待审批":"File edit needs approval",
+      "允许一次":"Allow once", "本次会话允许":"Allow for this session", "拒绝":"Reject",
+      "Codex 正等待处理；如果审批卡片尚未出现，请查看目标机终端。":"Codex is waiting; check the target terminal if the approval card has not appeared.",
+      "收起实例管理":"Hide instance management", "现有项目权限":"Existing project permissions", "尚无记录":"No record yet",
+      "默认力度":"Default effort", "请选择实例":"Select an instance", "现有实例的启动权限":"Launch permissions for existing instance",
+      "应用设置并重启":"Apply settings and restart", "停止实例":"Stop instance", "删除历史":"Delete history",
+      "信任目录并重启":"Trust folder and restart", "最近操作":"Recent actions", "请填写 VDI 工作目录":"Enter a VDI working directory",
+      "请填写任务内容":"Enter a task", "已复制到剪贴板":"Copied to clipboard", "复制失败，请手动选择文本":"Copy failed; select the text manually",
+      "状态读取失败":"Status read failed", "读取失败":"Read failed", "无法检测":"Could not detect", "选择已验证的地址":"Select a verified address",
+      "没有找到可用地址":"No available address", "运行中 · 22/TCP":"Running · 22/TCP", "未检测到监听 · 22/TCP":"No listener · 22/TCP",
+      "刚刚":"Just now", "秒前":"seconds ago", "分钟前":"minutes ago", "项":"items", "条":"items",
+      "界面语言":"Interface language", "选择一台机器":"Select a machine",
+      "机器上报后，点击左侧机器即可查看 Codex 实例。":"After a machine reports, select it to view its Codex instances.",
+      "修改设置会重启实例并打开新 Codex 会话。原会话记录仍保存在 Codex 中。":"Changing settings restarts the instance in a new Codex session. The previous session remains in Codex history.",
+      "重新写入目录信任并重启":"Renew folder trust and restart", "信任此目录并重启":"Trust folder and restart",
+      "信任由 Codex 保存到目标机器的用户配置。":"Codex saves trust in the target machine's user settings.",
+      "暂无中控操作。":"No Master actions yet.", "等待 VDI":"Waiting for VDI", "VDI 正在处理":"VDI processing",
+      "已完成":"Completed", "失败":"Failed", "启动":"Start", "停止":"Stop", "重启":"Restart",
+      "信任目录并重启":"Trust folder and restart", "审批":"Approve", "查询目录":"Browse folders", "查询模型":"Load models",
+      "请查看新实例":"See new instance", "允许":"Allow", "处理":"Handle", "尚无记录":"No record yet",
+      "默认力度":"Default effort", "请查看目标机终端":"Check the target terminal", "未知目录":"Unknown folder",
+      "把下面内容加入 VDI 的":"Add the following to the VDI's", "。如果内网 DNS 会随 VPN 地址更新，HostName 可以使用 DNS 名称。":". If internal DNS tracks VPN address changes, HostName may use the DNS name.",
+      "CodexAgentHarness · 中控台":"CodexAgentHarness · Control center", "CodexAgentHarness · 本机中控台":"CodexAgentHarness · Local control",
+      "工作区":"Workspace", "+ 新建实例":"+ New instance", "✓ 使用此目录":"✓ Use this folder", "↑ 上一级":"↑ Parent folder",
+      "Codex · 正在输出":"Codex · Streaming", "沿用 Codex 配置模型，或输入模型 ID":"Use the model from Codex settings, or enter a model ID",
+      "在接入页面配置第一台 VDI，机器上线后会自动显示。":"Configure the first VDI in Connect Agent; it appears here when online.",
+      "查看详情 →":"View details →", "查询可用模型":"Find available models", "没有匹配的机器":"No matching machines",
+      "目标机器响应超时":"Target machine timed out", "目标机器查询失败":"Target machine query failed",
+      "请求已发送，等待 VDI 执行":"Request sent; waiting for VDI", "调整搜索词或状态筛选，也可以接入新的 Agent。":"Change the search or status filter, or connect another Agent.",
+      "还没有 Agent 上报":"No Agents have reported yet",
+      "本机程序配置":"Local programs", "已自动搜索 Master 所在机器的程序。仅在缺失时手动填写路径；其他机器请在各自的 Slave 窗口配置。":"Programs on the Master machine are searched automatically. Enter paths only for missing programs; configure other machines in their Slave windows.",
+      "正在搜索本机程序…":"Searching local programs…", "本机启动所需程序均已找到。":"All programs needed for local launch were found.",
+      "未找到，请手动添加：":"Not found; add manually: ",
+      "Codex CLI 路径":"Codex CLI path", "终端程序路径":"Terminal path", "SSH 客户端路径":"SSH client path",
+      "Windows 可选 windows-console（系统新控制台）、powershell.exe、pwsh.exe 或 wt.exe；Linux 可选 x-terminal-emulator、gnome-terminal、konsole、xfce4-terminal 或 xterm。":"On Windows choose windows-console (a new system console), powershell.exe, pwsh.exe, or wt.exe. On Linux choose x-terminal-emulator, gnome-terminal, konsole, xfce4-terminal, or xterm.",
+      "保存本机程序":"Save local programs", "本机程序已保存":"Local programs saved", "保存失败":"Save failed",
+    };
+    let language = savedSelection("cah:language") === "en" ? "en" : "zh";
+    const translatedNodes = new WeakMap();
+    function translateText(source) {
+      if (language !== "en") return source;
+      const exact = translations[source];
+      if (exact) return exact;
+      const trimmed = source.trim();
+      if (translations[trimmed]) return source.replace(trimmed, translations[trimmed]);
+      if (/^\d+ 项$/.test(source)) return source.replace(" 项", " items");
+      if (/^\d+ 秒前$/.test(source)) return source.replace(" 秒前", " seconds ago");
+      if (/^\d+ 分钟前$/.test(source)) return source.replace(" 分钟前", " minutes ago");
+      if (source.includes("↻") && source.includes("刷新")) return source.replace("刷新", "Refresh");
+      const parts = [" · 本机", " · 在线", " · 离线", " · 在线上报", " 个 CLI 进程", " 个实例", " 个受管", " 个外部", "最近 ", " 条 · ", "最近一轮实际使用：", "启动设置：", "目录：", "目录查询失败：", "无法读取 Master 状态：", "地址读取失败："];
+      if (parts.some(part => source.includes(part))) {
+        let result = source;
+        for (const [before, after] of Object.entries({" · 本机":" · Local", " · 在线":" · Online", " · 离线":" · Offline", " · 在线上报":" · Reporting", " 个 CLI 进程":" CLI processes", " 个实例":" instances", " 个受管":" managed", " 个外部":" external", "最近 ":"Latest ", " 条 · ":" items · ", "最近一轮实际使用：":"Last used: ", "启动设置：":"Launch settings: ", "目录：":"Folder: ", "目录查询失败：":"Folder lookup failed: ", "无法读取 Master 状态：":"Cannot read Master status: ", "地址读取失败：":"Address lookup failed: "})) result = result.replaceAll(before, after);
+        return result;
+      }
+      return source;
+    }
+    function localizeDom() {
+      document.documentElement.lang = language === "en" ? "en" : "zh-CN";
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) { return node.parentElement?.closest("script,style,pre,code,textarea,[data-no-i18n]") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+      });
+      while (walker.nextNode()) {
+        const item = walker.currentNode;
+        const previous = translatedNodes.get(item);
+        const source = previous && item.nodeValue === previous.shown ? previous.source : item.nodeValue;
+        const shown = translateText(source);
+        if (shown !== item.nodeValue) item.nodeValue = shown;
+        translatedNodes.set(item, {source, shown});
+      }
+      for (const element of document.querySelectorAll("[placeholder],[aria-label],[title]")) {
+        for (const attribute of ["placeholder", "aria-label", "title"]) {
+          if (!element.hasAttribute(attribute)) continue;
+          const key = `cahSource${attribute}`;
+          const last = `cahShown${attribute}`;
+          const current = element.getAttribute(attribute);
+          const source = element.dataset[last] === current ? element.dataset[key] : current;
+          const shown = translateText(source);
+          if (shown !== current) element.setAttribute(attribute, shown);
+          element.dataset[key] = source;
+          element.dataset[last] = shown;
+        }
+      }
+    }
+    let localToolMissing = [];
+    function renderLocalToolDetection() {
+      const status = $("local-tool-detection");
+      if (!status) return;
+      status.textContent = localToolMissing.length
+        ? (language === "en" ? `Not found; add manually: ${localToolMissing.join(", ")}` : `未找到，请手动添加：${localToolMissing.join(", ")}`)
+        : (language === "en" ? "All programs needed for local launch were found." : "本机启动所需程序均已找到。");
+    }
+    function setLanguage(next) {
+      language = next === "en" ? "en" : "zh";
+      saveSelection("cah:language", language);
+      document.getElementById("language-select").value = language;
+      localizeDom();
+      renderLocalToolDetection();
+    }
+    const languageObserver = new MutationObserver(() => localizeDom());
+    languageObserver.observe(document.body, {subtree:true, childList:true, characterData:true});
+    const state = {machines: [], commands: [], taskDrafts: {}, modeDrafts: {}, modelDrafts: {}, effortDrafts: {},
+                   modelCatalog: {}, browser: {}, browseSearch: {}, selectedId: savedSelection("cah:selected-machine"),
+                   showHiddenFolders: savedSelection("cah:show-hidden-folders") === "1",
+                   inspectorOpen: savedSelection("cah:inspector-open") === "1", feedFilter: savedSelection("cah:feed-filter") || "all",
+                   view: "overview", lastRefresh: null, connected: false};
+    const statusNames = {starting:"启动中", working:"工作中", idle:"空闲", attention:"待处理", unknown:"未确认", exited:"已退出", error:"错误"};
+    const modeNames = {default:"沿用 Codex 权限配置", full_access:"完整访问 · 按需审批", bypass:"Bypass（绕过沙箱与审批）"};
+    const actionNames = {start:"启动", stop:"停止", restart:"重启", trust_project:"信任目录并重启", delete:"删除历史", task:"下达任务", approval:"审批", browse:"查询目录", models:"查询模型"};
+    const commandStatusNames = {queued:"等待 VDI", dispatched:"VDI 正在处理", succeeded:"已完成", failed:"失败"};
+    const $ = id => document.getElementById(id);
+    function node(tag, className, value) {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      if (value !== undefined) element.textContent = String(value);
+      return element;
+    }
+    function age(value) {
+      if (!value) return "—";
+      const seconds = Math.max(0, Math.floor((Date.now() - Date.parse(value)) / 1000));
+      if (!Number.isFinite(seconds)) return "—";
+      if (seconds < 10) return "刚刚";
+      if (seconds < 60) return `${seconds} 秒前`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)} 分钟前`;
+      return new Date(value).toLocaleString("zh-CN", {hour12:false});
+    }
+    function pill(label, kind) { return node("span", `pill ${kind}`, label); }
+    function agentAnimation(instance, online) {
+      const stateName = online ? instance.status : "offline";
+      const actor = node("div", `agent-animation ${stateName}`);
+      actor.setAttribute("aria-hidden", "true");
+      let hash = 0;
+      for (const character of String(instance.id)) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+      actor.style.setProperty("--phase", `${-(performance.now() / 1000 + (hash % 173) / 19)}s`);
+      actor.innerHTML = `<svg viewBox="0 0 104 76" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 71H99" stroke="#3a5662" stroke-width="2"/>
+        <path d="M16 38v29m3-11h26m-12 5v10" stroke="#426270" stroke-width="5" stroke-linecap="round"/>
+        <path d="M48 54h48M54 57v14m37-14v14" stroke="#52727b" stroke-width="4" stroke-linecap="round"/>
+        <rect x="65" y="23" width="28" height="28" rx="3" fill="#294452"/>
+        <rect x="68" y="26" width="22" height="21" rx="2" fill="#122b36"/>
+        <path class="screen-line" d="M71 32h13m-13 5h16" stroke="#71ddc7" stroke-width="2"/>
+        <path d="M79 51v3M57 53h20" stroke="#36545d" stroke-width="3"/>
+        <g class="work-person">
+          <path d="M24 38 43 35 51 55 27 60Z" fill="#51bda8"/>
+          <path d="m39 58 9 10" stroke="#29414e" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="35" cy="27" r="10" fill="#e8b48d"/>
+          <path d="M26 24c2-11 18-12 19 1" fill="none" stroke="#223440" stroke-width="5"/>
+          <circle cx="39" cy="27" r="1.3" fill="#223440"/>
+        </g>
+        <path class="work-hand" d="m43 42 14 11" stroke="#e8b48d" stroke-width="5" stroke-linecap="round"/>
+        <g class="rest-person">
+          <path d="M16 40 27 35 46 51 42 61 20 55Z" fill="#51bda8"/>
+          <path d="m39 54 12 10 7 2" fill="none" stroke="#29414e" stroke-width="6" stroke-linecap="round"/>
+          <path d="m22 42-5-18 11-4m6 19 5-16-11-3" fill="none" stroke="#e8b48d" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="27" cy="24" r="10" fill="#e8b48d"/>
+          <path d="M18 21c2-11 17-11 19 1" fill="none" stroke="#223440" stroke-width="5"/>
+          <path d="M27 28q3 3 6 0" fill="none" stroke="#223440" stroke-width="1.5"/>
+        </g>
+        <g class="rest-bubble" fill="none" stroke="#79ddca" stroke-width="2">
+          <circle cx="49" cy="18" r="2" fill="#79ddca"/><circle cx="56" cy="12" r="3" fill="#79ddca"/>
+          <path d="M62 4h8l-8 8h8"/>
+        </g>
+        <g class="alert-mark" fill="#e4b761"><rect x="53" y="8" width="4" height="10" rx="2"/><circle cx="55" cy="21" r="2"/></g>
+      </svg>`;
+      return actor;
+    }
+    function empty(title, description, symbol="◇") {
+      const box = node("div", "empty");
+      box.append(node("span", "empty-symbol", symbol), node("strong", "", title), node("p", "", description));
+      return box;
+    }
+    function metric(label, value, glyph, kind="") {
+      const card = node("div", `metric ${kind}`);
+      card.append(node("span", "metric-icon", glyph), node("strong", "metric-value", value), node("span", "metric-label", label));
+      return card;
+    }
+    function setView(view) {
+      state.view = view;
+      if (location.hash !== `#${view}`) history.replaceState(null, "", `#${view}`);
+      for (const name of ["overview", "workbench", "machines", "setup"]) $("view-" + name).hidden = name !== view;
+      document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === view && button.classList.contains("nav-button")));
+      $("crumb-name").textContent = {overview:"运行总览", workbench:"实例工作台", machines:"机器列表", setup:"接入 Agent"}[view];
+      if (view === "setup") { loadMasterInfo(); loadLocalTools(); }
+      window.scrollTo({top:0, behavior:"auto"});
+    }
+    function setConnection(connected, message) {
+      state.connected = connected;
+      $("sidebar-dot").classList.toggle("offline", !connected);
+      $("sidebar-status").textContent = connected ? "Master 正在运行" : "Master 连接异常";
+      $("live-chip").classList.toggle("error", !connected);
+      $("live-chip").lastElementChild.textContent = connected ? "实时同步中" : "连接中断";
+      $("last-refresh").textContent = message;
+    }
+    function renderSummary() {
+      const online = state.machines.filter(machine => machine.online);
+      const instances = online.flatMap(machine => machine.instances);
+      $("metrics").replaceChildren(
+        metric("在线机器", `${online.length} / ${state.machines.length}`, "▣"),
+        metric("受管实例", instances.length, "⌘"),
+        metric("工作中", instances.filter(item => item.status === "working").length, "↗"),
+        metric("需要处理", instances.filter(item => ["attention", "error"].includes(item.status)).length, "!", "warning")
+      );
+    }
+    function openInstance(machine, instance) {
+      state.selectedId = machine.machine_id;
+      saveSelection("cah:selected-machine", state.selectedId);
+      if (instance) saveSelection(`cah:selected-instance:${machine.machine_id}`, instance.id);
+      setView("workbench");
+      renderMachineList();
+      renderDetail();
+    }
+    function renderPriorities() {
+      const list = $("priority-list");
+      list.replaceChildren();
+      const urgent = state.machines.flatMap(machine => machine.instances
+        .filter(instance => machine.online && (instance.status === "attention" || instance.status === "error"))
+        .map(instance => ({machine, instance})))
+        .sort((a, b) => Number(b.instance.status === "attention") - Number(a.instance.status === "attention"));
+      $("attention-count").textContent = `${urgent.length} 项`;
+      if (!urgent.length) {
+        list.append(empty("目前没有待处理事项", "等待审批和异常实例会出现在这里。", "✓"));
+        return;
+      }
+      for (const {machine, instance} of urgent) {
+        const row = node("button", "priority-item");
+        row.type = "button";
+        const icon = node("span", `priority-icon ${instance.status}`, instance.status === "attention" ? "!" : "×");
+        const main = node("span", "priority-main");
+        main.append(node("strong", "", instance.project),
+          node("small", "", `${machine.hostname} · ${instance.pending_approvals?.length ? `${instance.pending_approvals.length} 项等待审批` : statusNames[instance.status]}`));
+        row.append(icon, main, node("span", "priority-arrow", "↗"));
+        row.addEventListener("click", () => openInstance(machine, instance));
+        list.append(row);
+      }
+    }
+    function renderMachineList() {
+      const list = $("machine-list");
+      list.replaceChildren();
+      if (!state.machines.length) {
+        list.append(empty("还没有 Agent 上报", "在接入页面配置第一台 VDI，机器上线后会自动显示。", "+"));
+        return;
+      }
+      const sorted = [...state.machines].sort((a,b) => Number(b.online) - Number(a.online) || a.hostname.localeCompare(b.hostname));
+      for (const machine of sorted) {
+        const button = node("button", "machine-item");
+        button.type = "button";
+        button.classList.toggle("selected", state.selectedId === machine.machine_id);
+        const main = node("div", "machine-item-main");
+        main.append(node("strong", "", `${machine.hostname}${machine.local ? " · 本机" : ""}`), node("small", "", `${machine.platform} · ${machine.instances.length} 个实例 · ${age(machine.received_at)}`));
+        if (machine.instances.length) {
+          const strip = node("div", "machine-agent-strip");
+          for (const instance of machine.instances) {
+            const chip = node("div", "machine-agent-chip");
+            chip.append(agentAnimation(instance, machine.online), node("span", "", instance.project || "Codex"));
+            strip.append(chip);
+          }
+          main.append(strip);
+        }
+        button.append(node("span", "machine-avatar", machine.platform === "windows" ? "▦" : "⌘"), main,
+          pill(machine.online ? "在线" : "离线", machine.online ? "online" : "offline"), node("span", "machine-item-arrow", "›"));
+        button.addEventListener("click", () => openInstance(machine));
+        list.append(button);
+      }
+    }
+    function fact(label, value) {
+      const element = node("div", "fact");
+      element.append(node("span", "", label), node("strong", "", value));
+      return element;
+    }
+    async function sendCommand(request) {
+      try {
+        const response = await fetch(new URL("/api/commands", location.origin), {
+          method: "POST", credentials: "same-origin",
+          headers: {"Content-Type": "application/json"}, body: JSON.stringify(request)
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(typeof error.detail === "string" ? error.detail : `HTTP ${response.status}`);
+        }
+        showToast("请求已发送，等待 VDI 执行");
+        await refresh();
+        return true;
+      } catch (error) {
+        showToast(`操作失败：${error.message}`);
+        return false;
+      }
+    }
+    async function lookupOnMachine(machine, action, cwd) {
+      const response = await fetch(new URL("/api/commands", location.origin), {
+        method: "POST", credentials: "same-origin", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({machine_id: machine.machine_id, action, cwd})
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || `HTTP ${response.status}`);
+      }
+      const queued = await response.json();
+      for (let attempt = 0; attempt < 30; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const statusResponse = await fetch(new URL("/api/status", location.origin), {cache:"no-store"});
+        if (!statusResponse.ok) continue;
+        const status = await statusResponse.json();
+        const command = status.commands?.find(item => item.id === queued.id);
+        if (command?.status === "failed") throw new Error(command.message || "目标机器查询失败");
+        if (command?.status === "succeeded") return command.data || {};
+      }
+      throw new Error("目标机器响应超时");
+    }
+    async function loadModelCatalog(machine) {
+      const id = machine.machine_id;
+      if (state.modelCatalog[id]?.loading) return;
+      state.modelCatalog[id] = {loading:true, models:state.modelCatalog[id]?.models || []};
+      renderDetail();
+      try {
+        const data = await lookupOnMachine(machine, "models");
+        state.modelCatalog[id] = {loading:false, models:data.models || [], error:null};
+      } catch (error) {
+        state.modelCatalog[id] = {loading:false, models:[], error:error.message};
+      }
+      renderDetail();
+    }
+    async function loadDirectory(machine, path) {
+      const id = machine.machine_id;
+      state.browser[id] = {...state.browser[id], loading:true, error:null};
+      renderDetail();
+      try {
+        state.browser[id] = {...await lookupOnMachine(machine, "browse", path), loading:false, error:null};
+      } catch (error) {
+        state.browser[id] = {...state.browser[id], loading:false, error:error.message};
+      }
+      renderDetail();
+    }
+    function modelPicker(machine, value, onChange, pickerId) {
+      const wrapper = node("div", "model-picker");
+      const catalog = state.modelCatalog[machine.machine_id];
+      const input = node("input", "field");
+      input.type = "text"; input.maxLength = 100; input.placeholder = "沿用 Codex 配置模型，或输入模型 ID";
+      input.value = value || ""; input.setAttribute("list", `models-${machine.machine_id}-${pickerId}`);
+      input.addEventListener("input", () => onChange(input.value.trim()));
+      const datalist = node("datalist"); datalist.id = `models-${machine.machine_id}-${pickerId}`;
+      for (const model of catalog?.models || []) {
+        const option = node("option"); option.value = model.id; option.label = model.name;
+        datalist.append(option);
+      }
+      const refreshButton = node("button", "secondary-button", catalog?.loading ? "查询中…" : "查询可用模型");
+      refreshButton.type = "button"; refreshButton.disabled = !machine.online || catalog?.loading;
+      refreshButton.addEventListener("click", () => loadModelCatalog(machine));
+      wrapper.append(input, datalist, refreshButton);
+      if (catalog?.error) wrapper.append(node("p", "", `模型查询失败：${catalog.error}`));
+      else if (catalog?.models?.length) wrapper.append(node("p", "", `可选：${catalog.models.map(item => item.name).join("、")}`));
+      return {wrapper, input};
+    }
+    function effortPicker(machine, modelValue, value, onChange) {
+      const catalogModel = state.modelCatalog[machine.machine_id]?.models?.find(item => item.id === modelValue);
+      const supported = catalogModel?.efforts?.length ? catalogModel.efforts : ["minimal", "low", "medium", "high", "xhigh", "max", "ultra"];
+      const select = node("select", "select");
+      const defaultOption = node("option", "", "沿用模型默认推理力度"); defaultOption.value = ""; select.append(defaultOption);
+      for (const effort of supported) {
+        const option = node("option", "", effort); option.value = effort; select.append(option);
+      }
+      if (value && !supported.includes(value)) {
+        const option = node("option", "", `${value}（当前设置）`); option.value = value; select.append(option);
+      }
+      select.value = value || "";
+      select.addEventListener("change", () => onChange(select.value));
+      return select;
+    }
+    function pickerHasFocus() {
+      const active = document.activeElement;
+      return $("detail-panel").contains(active) &&
+        (active.tagName === "SELECT" || (active.tagName === "INPUT" && active.hasAttribute("list")));
+    }
+    function renderDetail(force = false) {
+      const root = $("detail-panel");
+      if (!force && pickerHasFocus()) {
+        state.detailDeferred = true;
+        return;
+      }
+      state.detailDeferred = false;
+      const previousActivityId = root.dataset.activityInstanceId;
+      const previousFeed = root.querySelector(".activity-feed");
+      const previousScroll = previousFeed?.scrollTop || 0;
+      const previousSettingsScroll = root.querySelector(".workspace-settings")?.scrollTop || 0;
+      const previousBrowserScroll = root.querySelector(".directory-browser")?.scrollTop || 0;
+      const followLatest = !previousFeed || previousFeed.scrollTop + previousFeed.clientHeight >= previousFeed.scrollHeight - 30;
+      const focusedCwd = root.querySelector('[data-control="cwd"]') === document.activeElement;
+      const cwdCaret = focusedCwd ? document.activeElement.selectionStart : null;
+      const focusedMode = root.querySelector('[data-control="mode"]') === document.activeElement;
+      const focusedPermission = root.querySelector('[data-control="permission"]') === document.activeElement;
+      const focusedBrowseSearch = root.querySelector('[data-control="browse-search"]') === document.activeElement;
+      const focusedNewModel = root.querySelector('[data-control="new-model"]') === document.activeElement;
+      const focusedExistingModel = root.querySelector('[data-control="existing-model"]') === document.activeElement;
+      const modelCaret = (focusedNewModel || focusedExistingModel || focusedBrowseSearch) ? document.activeElement.selectionStart : null;
+      const focusedTask = root.querySelector('[data-control="task"]') === document.activeElement;
+      const taskCaret = focusedTask ? document.activeElement.selectionStart : null;
+      root.replaceChildren();
+      const machine = state.machines.find(item => item.machine_id === state.selectedId);
+      if (!machine) {
+        root.append(empty("选择一台机器", "机器上报后，点击左侧机器即可查看 Codex 实例。", "▣"));
+        return;
+      }
+      const body = node("div", "detail-body");
+      const title = node("div", "detail-title");
+      const heading = node("div");
+      heading.append(node("h2", "", `${machine.hostname}${machine.local ? " · 本机" : ""}`), node("p", "", `${machine.platform} · ${machine.cli_process_count} 个 CLI 进程 · ${machine.online ? "在线上报" : "已离线"}`));
+      const machineSelect = node("select", "select");
+      machineSelect.setAttribute("aria-label", "切换目标机器");
+      for (const item of state.machines) {
+        const option = node("option", "", `${item.hostname}${item.local ? " · 本机" : ""} · ${item.online ? "在线" : "离线"}`);
+        option.value = item.machine_id;
+        machineSelect.append(option);
+      }
+      machineSelect.value = machine.machine_id;
+      machineSelect.addEventListener("change", () => {
+        state.selectedId = machineSelect.value;
+        saveSelection("cah:selected-machine", state.selectedId);
+        renderMachineList(); renderDetail(true);
+      });
+      const titleActions = node("div", "detail-actions");
+      const addInstanceButton = node("button", "secondary-button", "+ 新建实例");
+      addInstanceButton.type = "button";
+      addInstanceButton.disabled = !machine.online;
+      addInstanceButton.addEventListener("click", () => {
+        state.inspectorOpen = true;
+        saveSelection("cah:inspector-open", "1");
+        renderDetail();
+        root.querySelector('[data-control="cwd"]')?.focus();
+      });
+      const inspectorButton = node("button", "secondary-button", state.inspectorOpen ? "收起设置" : "管理实例");
+      inspectorButton.type = "button";
+      inspectorButton.setAttribute("aria-expanded", String(state.inspectorOpen));
+      inspectorButton.addEventListener("click", () => {
+        state.inspectorOpen = !state.inspectorOpen;
+        saveSelection("cah:inspector-open", state.inspectorOpen ? "1" : "0");
+        renderDetail();
+      });
+      titleActions.append(machineSelect, pill(machine.online ? "在线" : "离线", machine.online ? "online" : "offline"), addInstanceButton, inspectorButton);
+      title.append(heading, titleActions);
+      const commandForm = node("div", "command-form");
+      commandForm.append(node("h3", "", "从中控启动新实例"));
+      const commandRow = node("div", "command-row");
+      const cwdInput = node("input", "field");
+      cwdInput.type = "text";
+      cwdInput.dataset.control = "cwd";
+      cwdInput.placeholder = "VDI 上的工作目录，例如 /home/user/project";
+      const cwdKey = `cah:cwd:${machine.machine_id}`;
+      cwdInput.value = savedSelection(cwdKey) || machine.instances[0]?.cwd || "";
+      cwdInput.addEventListener("input", () => saveSelection(cwdKey, cwdInput.value));
+      const browseButton = node("button", "secondary-button", "浏览目标机器目录");
+      browseButton.type = "button"; browseButton.disabled = !machine.online;
+      browseButton.addEventListener("click", () => loadDirectory(machine, cwdInput.value.trim() || null));
+      const homeButton = node("button", "secondary-button", "主目录");
+      homeButton.type = "button"; homeButton.disabled = !machine.online;
+      homeButton.addEventListener("click", () => loadDirectory(machine, null));
+      const browser = node("div", "directory-browser");
+      const browserState = state.browser[machine.machine_id];
+      if (browserState?.loading) browser.append(node("p", "", "正在读取目标机器目录…"));
+      else if (browserState?.error) browser.append(node("p", "", `目录查询失败：${browserState.error}`));
+      else if (browserState?.path) {
+        browser.append(node("p", "browser-path", browserState.path));
+        const pick = node("button", "", "✓ 使用此目录");
+        pick.type = "button"; pick.addEventListener("click", () => { cwdInput.value = browserState.path; saveSelection(cwdKey, cwdInput.value); });
+        browser.append(pick);
+        if (browserState.parent) {
+          const up = node("button", "", "↑ 上一级"); up.type = "button";
+          up.addEventListener("click", () => loadDirectory(machine, browserState.parent)); browser.append(up);
+        }
+        const search = node("input", "field");
+        search.placeholder = "筛选当前目录中的文件夹"; search.dataset.control = "browse-search";
+        search.value = state.browseSearch[machine.machine_id] || "";
+        const folderVisible = name =>
+          (state.showHiddenFolders || !name.startsWith(".")) && name.toLowerCase().includes(search.value.toLowerCase());
+        const refreshFolderVisibility = () => browser.querySelectorAll("[data-folder]").forEach(item => {
+          item.hidden = !folderVisible(item.dataset.folder);
+        });
+        search.addEventListener("input", () => {
+          state.browseSearch[machine.machine_id] = search.value;
+          refreshFolderVisibility();
+        });
+        browser.append(search);
+        const hiddenToggle = node("label", "browser-hidden-toggle");
+        const hiddenCheckbox = node("input"); hiddenCheckbox.type = "checkbox";
+        hiddenCheckbox.checked = state.showHiddenFolders;
+        hiddenCheckbox.addEventListener("change", () => {
+          state.showHiddenFolders = hiddenCheckbox.checked;
+          saveSelection("cah:show-hidden-folders", hiddenCheckbox.checked ? "1" : "0");
+          refreshFolderVisibility();
+        });
+        hiddenToggle.append(hiddenCheckbox, node("span", "", "显示 . 开头的隐藏文件夹"));
+        browser.append(hiddenToggle);
+        for (const name of browserState.directories || []) {
+          const entry = node("button", "", `📁 ${name}`); entry.type = "button";
+          entry.dataset.folder = name;
+          entry.hidden = !folderVisible(name);
+          entry.addEventListener("click", () => loadDirectory(machine, browserState.path.replace(/[\\/]$/, "") + (machine.platform === "windows" ? "\\" : "/") + name));
+          browser.append(entry);
+        }
+        if (browserState.truncated) browser.append(node("p", "", "只显示前 200 个文件夹。"));
+      } else browser.append(node("p", "", "点击上方按钮查询目标机器文件夹。"));
+      const modeSelect = node("select", "select");
+      modeSelect.dataset.control = "mode";
+      const modeKey = `cah:mode:${machine.machine_id}`;
+      for (const [value, label] of Object.entries(modeNames)) {
+        const option = node("option", "", label);
+        option.value = value;
+        modeSelect.append(option);
+      }
+      modeSelect.value = savedSelection(modeKey) || "default";
+      modeSelect.addEventListener("change", () => saveSelection(modeKey, modeSelect.value));
+      const newModelKey = `cah:model:${machine.machine_id}`;
+      const newEffortKey = `cah:effort:${machine.machine_id}`;
+      const newModel = modelPicker(machine, savedSelection(newModelKey) || "", value => {
+        saveSelection(newModelKey, value);
+        const match = state.modelCatalog[machine.machine_id]?.models?.find(item => item.id === value);
+        if (match?.efforts?.length && !match.efforts.includes(savedSelection(newEffortKey))) saveSelection(newEffortKey, "");
+        renderDetail();
+      }, "new");
+      newModel.input.dataset.control = "new-model";
+      const newEffort = effortPicker(machine, newModel.input.value, savedSelection(newEffortKey) || "",
+        value => saveSelection(newEffortKey, value));
+      const startButton = node("button", "primary-button", "启动实例");
+      startButton.type = "button";
+      startButton.disabled = !machine.online;
+      startButton.addEventListener("click", () => {
+        if (!cwdInput.value.trim()) { showToast("请填写 VDI 工作目录"); return; }
+        sendCommand({machine_id: machine.machine_id, action: "start",
+                     cwd: cwdInput.value.trim(), mode: modeSelect.value,
+                     model: newModel.input.value.trim() || null, effort: newEffort.value || null});
+      });
+      commandRow.append(cwdInput, browseButton, homeButton, browser, modeSelect,
+        node("div", "settings-field-label", "启动模型"), newModel.wrapper,
+        node("div", "settings-field-label", "推理力度"), newEffort, startButton);
+      commandForm.append(commandRow);
+      const instanceHeading = node("div", "instance-heading");
+      const managedCount = machine.instances.filter(item => item.managed !== false).length;
+      instanceHeading.append(node("h3", "", "Codex 实例"), node("span", "subtle", `${managedCount} 个受管 · ${machine.instances.length - managedCount} 个外部`));
+      const list = node("div", "instance-list workspace-instance-list");
+      if (!machine.instances.length) list.append(empty("暂无受管实例", "在这台机器的本地界面启动 Codex 实例后会显示在这里。", "⌘"));
+      const instanceKey = `cah:selected-instance:${machine.machine_id}`;
+      let selectedInstanceId = savedSelection(instanceKey);
+      if (!machine.instances.some(item => item.id === selectedInstanceId)) {
+        selectedInstanceId = machine.instances[0]?.id || null;
+        if (selectedInstanceId) saveSelection(instanceKey, selectedInstanceId);
+      }
+      for (const instance of machine.instances) {
+        const card = node("div", "instance-card");
+        card.tabIndex = 0;
+        card.classList.toggle("selected", instance.id === selectedInstanceId);
+        const info = node("div");
+        const caption = instance.managed === false ? `PID ${instance.pid ?? "—"} · 外部 Codex CLI · 状态未确认` :
+          `PID ${instance.pid ?? "—"} · ${modeNames[instance.launch_mode] || modeNames.default} · ${instance.active_model || instance.model || "模型未确认"} ${instance.active_reasoning_effort || instance.reasoning_effort || "力度未确认"}`;
+        info.append(node("strong", "", instance.project || "未命名项目"), node("small", "", caption));
+        const cardMain = node("div", "instance-card-main");
+        cardMain.append(agentAnimation(instance, machine.online), info);
+        const end = node("div", "instance-end");
+        end.append(pill(machine.online ? (statusNames[instance.status] || "未确认") : "离线", machine.online ? instance.status : "offline"),
+          node("small", "", age(instance.last_activity)));
+        card.append(cardMain, end);
+        card.addEventListener("click", () => { saveSelection(instanceKey, instance.id); renderDetail(); });
+        card.addEventListener("keydown", event => {
+          if (event.target === card && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault(); saveSelection(instanceKey, instance.id); renderDetail();
+          }
+        });
+        list.append(card);
+      }
+      const selected = machine.instances.find(item => item.id === selectedInstanceId);
+      const taskForm = node("div", "task-form");
+      taskForm.append(node("h3", "", "继续对话"),
+        node("p", "", selected ? (selected.managed === false ?
+          "外部 CLI 只能确认进程存活；当前无法读取会话或下达任务。请从中控新建受管实例。" :
+          `${statusNames[selected.status] || "未确认"} · ${selected.interaction_ready ? "Ctrl+Enter 发送" : "等待互动连接"}`) : "请先选择一个实例"));
+      if (selected?.managed !== false && selected && !selected.interaction_ready &&
+          !["exited", "error"].includes(selected.status))
+        taskForm.append(node("p", "", "若目标终端显示 Folder access，请在实例管理中确认“信任此目录并重启”；其他初始提示请在目标终端处理。"));
+      const taskInput = node("textarea", "field");
+      taskInput.dataset.control = "task";
+      taskInput.maxLength = 8000;
+      taskInput.placeholder = "输入给这个 Codex 实例的任务";
+      taskInput.value = selected ? (state.taskDrafts[selected.id] || "") : "";
+      taskInput.addEventListener("input", () => { if (selected) state.taskDrafts[selected.id] = taskInput.value; });
+      const taskButton = node("button", "primary-button", "下达任务");
+      taskButton.type = "button";
+      taskButton.disabled = !machine.online || !selected || selected.managed === false || !selected.interaction_ready || ["starting", "exited", "error"].includes(selected.status);
+      async function submitTask() {
+        const prompt = taskInput.value.trim();
+        if (!prompt) { showToast("请填写任务内容"); return; }
+        taskButton.disabled = true;
+        const accepted = await sendCommand({machine_id: machine.machine_id, action: "task",
+                                            instance_id: selected.id, prompt});
+        if (accepted) { delete state.taskDrafts[selected.id]; renderDetail(); }
+        taskButton.disabled = false;
+      }
+      taskButton.addEventListener("click", submitTask);
+      taskInput.addEventListener("keydown", event => {
+        if (event.key === "Enter" && event.ctrlKey) { event.preventDefault(); if (!taskButton.disabled) submitTask(); }
+      });
+      taskForm.append(taskInput, taskButton);
+      const activityHeading = node("div", "activity-heading");
+      const activityTitle = node("div", "activity-title");
+      activityTitle.append(node("h3", "", selected?.project || "实例实时内容"),
+        node("span", "subtle", selected ? `最近 ${selected.activity?.length || 0} 条 · ${age(selected.last_activity)}` : "选择实例"));
+      const feedTabs = node("div", "feed-tabs");
+      for (const [value, label] of [["all", "全部"], ["conversation", "对话"], ["tools", "工具"]]) {
+        const tab = node("button", state.feedFilter === value ? "feed-tab active" : "feed-tab", label);
+        tab.type = "button";
+        tab.setAttribute("aria-pressed", String(state.feedFilter === value));
+        tab.addEventListener("click", () => {
+          state.feedFilter = value;
+          saveSelection("cah:feed-filter", value);
+          renderDetail();
+        });
+        feedTabs.append(tab);
+      }
+      activityHeading.append(activityTitle, feedTabs);
+      const feed = node("div", "activity-feed");
+      const shownActivity = (selected?.activity || []).filter(entry => state.feedFilter === "all" ||
+        (state.feedFilter === "conversation" ? ["用户", "Codex"].includes(entry.kind) : !["用户", "Codex"].includes(entry.kind)));
+      if (!shownActivity.length) {
+        feed.append(empty("暂无活动内容", selected?.managed === false ?
+          "这是外部启动的 Codex CLI。Master 已发现进程，但不能读取它的实时对话。" : state.feedFilter === "all" ?
+          "在 Codex 终端输入任务后，这里会显示最近的消息和工具执行。" : "当前筛选条件下没有活动。", "◇"));
+      } else {
+        for (const entry of shownActivity) {
+          const row = node("div", `activity-entry ${entry.kind === "用户" ? "message-user" : entry.kind === "Codex" ? "message-agent" : "tool-entry"}`);
+          row.append(node("strong", "", entry.kind), node("span", "", entry.status || ""),
+            node("pre", "", entry.text));
+          feed.append(row);
+        }
+      }
+      if (selected?.live_text && state.feedFilter !== "tools") {
+        const live = node("div", "activity-entry message-agent live-entry");
+        live.append(node("strong", "", "Codex · 正在输出"), node("pre", "", selected.live_text));
+        feed.append(live);
+      }
+      const approvals = node("div", "approval-list");
+      for (const approval of selected?.pending_approvals || []) {
+        const card = node("div", "approval-card");
+        const origin = approval.id?.startsWith("terminal-") ? "目标机终端" : "Master 任务";
+        card.append(node("strong", "", `${origin} · ${approval.kind === "command" ? "命令等待审批" : "文件修改等待审批"}`));
+        if (approval.reason) card.append(node("p", "", approval.reason));
+        if (approval.cwd) card.append(node("p", "", `目录：${approval.cwd}`));
+        if (approval.command) card.append(node("pre", "", approval.command));
+        const buttons = node("div", "approval-actions");
+        const choices = [["accept", "允许一次"], ["decline", "拒绝"]];
+        if (approval.available_decisions?.includes("acceptForSession")) choices.splice(1, 0, ["acceptForSession", "本次会话允许"]);
+        for (const [decision, label] of choices) {
+          const button = node("button", decision === "accept" ? "primary-button" : "secondary-button", label);
+          button.type = "button";
+          button.disabled = !machine.online;
+          button.addEventListener("click", () => sendCommand({machine_id: machine.machine_id,
+            action: "approval", instance_id: selected.id, approval_id: approval.id, decision}));
+          buttons.append(button);
+        }
+        card.append(buttons);
+        approvals.append(card);
+      }
+      if (selected?.status === "attention" && !selected.pending_approvals?.length) {
+        approvals.append(node("div", "terminal-approval", "Codex 正等待处理；如果审批卡片尚未出现，请查看目标机终端。"));
+      }
+      const settings = node("div", "workspace-column workspace-settings");
+      const settingsHeading = node("div", "settings-heading");
+      const closeSettings = node("button", "settings-close", "×");
+      closeSettings.type = "button";
+      closeSettings.setAttribute("aria-label", "收起实例管理");
+      closeSettings.addEventListener("click", () => {
+        state.inspectorOpen = false;
+        saveSelection("cah:inspector-open", "0");
+        renderDetail();
+      });
+      settingsHeading.append(node("div", "", "实例管理"), closeSettings);
+      settings.append(settingsHeading);
+      const permissionForm = node("div", "permission-form");
+      permissionForm.append(node("h3", "", "现有项目权限"));
+      permissionForm.append(node("div", "model-summary", selected ?
+        `最近一轮实际使用：${selected.active_model || "尚无记录"} · ${selected.active_reasoning_effort || "力度未确认"}` : "请选择实例"));
+      permissionForm.append(node("div", "model-summary", selected ?
+        `启动设置：${selected.model || "沿用 Codex 配置模型"} · ${selected.reasoning_effort || "沿用模型默认推理力度"}` : "请选择实例"));
+      const permissionSelect = node("select", "select");
+      permissionSelect.dataset.control = "permission";
+      permissionSelect.setAttribute("aria-label", "现有实例的启动权限");
+      for (const [value, label] of Object.entries(modeNames)) {
+        const option = node("option", "", label);
+        option.value = value;
+        permissionSelect.append(option);
+      }
+      permissionSelect.value = selected ? (state.modeDrafts[selected.id] || selected.launch_mode || "default") : "default";
+      permissionSelect.disabled = !selected;
+      if (selected?.managed === false) permissionSelect.disabled = true;
+      permissionSelect.addEventListener("change", () => { if (selected) state.modeDrafts[selected.id] = permissionSelect.value; });
+      const existingModel = modelPicker(machine, selected ? (state.modelDrafts[selected.id] ?? selected.model ?? "") : "",
+        value => {
+          if (selected) {
+            state.modelDrafts[selected.id] = value;
+            const match = state.modelCatalog[machine.machine_id]?.models?.find(item => item.id === value);
+            if (match?.efforts?.length && !match.efforts.includes(state.effortDrafts[selected.id] ?? selected.reasoning_effort))
+              state.effortDrafts[selected.id] = "";
+            renderDetail();
+          }
+        }, "existing");
+      existingModel.input.dataset.control = "existing-model";
+      existingModel.input.disabled = !selected || selected.managed === false;
+      if (selected?.managed === false) existingModel.wrapper.querySelector("button").disabled = true;
+      const existingEffort = effortPicker(machine, existingModel.input.value,
+        selected ? (state.effortDrafts[selected.id] ?? selected.reasoning_effort ?? "") : "",
+        value => { if (selected) state.effortDrafts[selected.id] = value; });
+      existingEffort.disabled = !selected || selected.managed === false;
+      const restartButton = node("button", "primary-button", "应用设置并重启");
+      restartButton.type = "button";
+      restartButton.disabled = !machine.online || !selected || selected.managed === false || selected.status === "starting";
+      restartButton.addEventListener("click", () => {
+        if (!["exited", "error"].includes(selected.status) && !window.confirm(language === "en" ? "This stops the current Codex instance and starts a new session with the selected permissions, model, and effort. Continue?" : "这会停止当前 Codex 实例，并按所选权限、模型和力度启动新会话。继续？")) return;
+        sendCommand({machine_id: machine.machine_id, action: "restart", instance_id: selected.id,
+          mode: permissionSelect.value, model: existingModel.input.value.trim() || null,
+          effort: existingEffort.value || null});
+      });
+      permissionForm.append(permissionSelect, node("div", "settings-field-label", "模型"), existingModel.wrapper,
+        node("div", "settings-field-label", "推理力度"), existingEffort, restartButton,
+        node("p", "", "修改设置会重启实例并打开新 Codex 会话。原会话记录仍保存在 Codex 中。"));
+      const trustButton = node("button", "secondary-button", selected?.trust_project ? "重新写入目录信任并重启" : "信任此目录并重启");
+      trustButton.type = "button";
+      trustButton.disabled = !machine.online || !selected || selected.managed === false ||
+        selected.status === "starting";
+      trustButton.addEventListener("click", () => {
+        const path = selected.cwd || "未知目录";
+        if (!window.confirm(language === "en" ? `Trust this folder on the target machine and restart Codex?\n\n${path}\n\nCodex saves this trust in the target user's settings. Future sessions in this folder will use it. Project settings and hooks may run automatically. Continue only if you trust this folder.` : `信任目标机器上的目录并重启 Codex？\n\n${path}\n\nCodex 会把信任写入该机器的用户配置；以后从此目录启动的会话也会使用。项目配置和钩子可能自动运行。仅在你信任此目录时继续。`)) return;
+        sendCommand({machine_id: machine.machine_id, action: "trust_project", instance_id: selected.id,
+          mode: permissionSelect.value, model: existingModel.input.value.trim() || null,
+          effort: existingEffort.value || null});
+      });
+      permissionForm.append(trustButton, node("p", "", "信任由 Codex 保存到目标机器的用户配置。"));
+      const permissionActions = node("div", "permission-actions");
+      const stopButton = node("button", "secondary-button", "停止实例");
+      stopButton.type = "button";
+      stopButton.disabled = !machine.online || !selected || selected.managed === false || ["exited", "error"].includes(selected.status);
+      stopButton.addEventListener("click", () => sendCommand({machine_id: machine.machine_id, action: "stop", instance_id: selected.id}));
+      const deleteButton = node("button", "secondary-button", "删除历史");
+      deleteButton.type = "button";
+      deleteButton.disabled = !machine.online || !selected || selected.managed === false || !["exited", "error"].includes(selected.status);
+      deleteButton.addEventListener("click", () => sendCommand({machine_id: machine.machine_id, action: "delete", instance_id: selected.id}));
+      permissionActions.append(stopButton, deleteButton);
+      permissionForm.append(permissionActions);
+      const history = node("div", "command-history");
+      history.append(node("h3", "", "最近操作"));
+      const machineCommands = state.commands.filter(item => item.machine_id === machine.machine_id &&
+        (!selected || item.instance_id === selected.id)).slice(-10).reverse();
+      if (!machineCommands.length) history.append(node("p", "", "暂无中控操作。"));
+      const groupedCommands = [];
+      for (const command of machineCommands) {
+        const signature = `${command.action}|${command.status}|${command.message || ""}`;
+        const previous = groupedCommands[groupedCommands.length - 1];
+        if (previous?.signature === signature) { previous.count++; continue; }
+        groupedCommands.push({command, signature, count: 1});
+      }
+      for (const {command, count} of groupedCommands.slice(0, 5)) {
+        const action = command.action === "approval" ? `审批：${command.decision === "accept" ? "允许" : command.decision === "decline" ? "拒绝" : command.decision || "处理"}` : (actionNames[command.action] || command.action);
+        const message = command.message?.replace(/NEW_INSTANCE_ID=[0-9a-f-]{36}/, "请查看新实例") || "";
+        history.append(node("p", `history-item ${command.status}`, `${action} · ${commandStatusNames[command.status] || command.status}${count > 1 ? ` ×${count}` : ""}${message ? " · " + message : ""}`));
+      }
+      const columns = node("div", state.inspectorOpen ? "workspace-grid settings-open" : "workspace-grid");
+      const instancesColumn = node("div", "workspace-column");
+      instancesColumn.append(instanceHeading, list);
+      const conversation = node("div", "workspace-column workspace-conversation");
+      conversation.append(activityHeading);
+      if (selected?.cwd) conversation.append(node("p", "subtle", selected.cwd));
+      conversation.append(approvals, feed, taskForm);
+      settings.append(permissionForm, commandForm, history);
+      settings.hidden = !state.inspectorOpen;
+      columns.append(instancesColumn, conversation, settings);
+      body.append(title, columns);
+      root.append(body);
+      settings.scrollTop = previousSettingsScroll;
+      browser.scrollTop = previousBrowserScroll;
+      root.dataset.activityInstanceId = selectedInstanceId || "";
+      if (previousActivityId === selectedInstanceId && !followLatest) feed.scrollTop = previousScroll;
+      else feed.scrollTop = feed.scrollHeight;
+      if (focusedCwd) { cwdInput.focus(); cwdInput.setSelectionRange(cwdCaret, cwdCaret); }
+      if (focusedMode) modeSelect.focus();
+      if (focusedPermission) permissionSelect.focus();
+      if (focusedBrowseSearch) { const field = root.querySelector('[data-control="browse-search"]'); field?.focus(); field?.setSelectionRange(modelCaret, modelCaret); }
+      if (focusedNewModel) { newModel.input.focus(); newModel.input.setSelectionRange(modelCaret, modelCaret); }
+      if (focusedExistingModel) { existingModel.input.focus(); existingModel.input.setSelectionRange(modelCaret, modelCaret); }
+      if (focusedTask) { taskInput.focus(); taskInput.setSelectionRange(taskCaret, taskCaret); }
+    }
+    function renderTable() {
+      const query = $("machine-search").value.trim().toLowerCase();
+      const filter = $("machine-filter").value;
+      const filtered = state.machines.filter(machine => {
+        if (filter === "online" && !machine.online) return false;
+        if (filter === "offline" && machine.online) return false;
+        if (filter === "attention" && (!machine.online || !machine.instances.some(item => item.status === "attention"))) return false;
+        return !query || machine.hostname.toLowerCase().includes(query) || machine.instances.some(item => item.project.toLowerCase().includes(query));
+      });
+      const body = $("machine-table");
+      body.replaceChildren();
+      for (const machine of filtered) {
+        const row = node("tr");
+        const host = node("td");
+        host.append(node("span", "table-host", machine.hostname), node("span", "table-sub", `${machine.platform} · ${machine.machine_id.slice(0, 12)}`));
+        const status = node("td"); status.append(pill(machine.online ? "在线" : "离线", machine.online ? "online" : "offline"));
+        const action = node("td");
+        const button = node("button", "text-button", "查看详情 →");
+        button.type = "button";
+        button.addEventListener("click", () => openInstance(machine));
+        action.append(button);
+        row.append(host, status, node("td", "", machine.instances.length),
+          node("td", "", machine.online ? machine.instances.filter(item => item.status === "working").length : "—"),
+          node("td", "", age(machine.received_at)), action);
+        body.append(row);
+      }
+      $("table-empty").hidden = filtered.length > 0;
+      if (!filtered.length) $("table-empty").replaceChildren(empty("没有匹配的机器", "调整搜索词或状态筛选，也可以接入新的 Agent。", "⌕"));
+    }
+    function renderAll() { renderSummary(); renderPriorities(); renderMachineList(); renderDetail(); renderTable(); }
+    async function refresh() {
+      try {
+        const response = await fetch(new URL("/api/status", location.origin), {cache:"no-store"});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        state.machines = Array.isArray(data.machines) ? data.machines : [];
+        state.commands = Array.isArray(data.commands) ? data.commands : [];
+        const lastRestart = savedSelection("cah:last-restart-switch");
+        const moved = [...state.commands].reverse().find(command => command.action === "restart" &&
+          command.status === "succeeded" && command.id !== lastRestart &&
+          /NEW_INSTANCE_ID=([0-9a-f-]{36})/.test(command.message || ""));
+        if (moved) {
+          const newId = moved.message.match(/NEW_INSTANCE_ID=([0-9a-f-]{36})/)[1];
+          const machine = state.machines.find(item => item.machine_id === moved.machine_id);
+          const key = `cah:selected-instance:${moved.machine_id}`;
+          if (machine?.instances.some(item => item.id === newId)) {
+            if (savedSelection(key) === moved.instance_id) saveSelection(key, newId);
+            saveSelection("cah:last-restart-switch", moved.id);
+          }
+        }
+        if (!state.machines.some(machine => machine.machine_id === state.selectedId)) {
+          const preferred = [...state.machines].sort((a,b) => Number(b.online) - Number(a.online) || Date.parse(b.received_at) - Date.parse(a.received_at))[0];
+          state.selectedId = preferred?.machine_id || null;
+          if (state.selectedId) saveSelection("cah:selected-machine", state.selectedId);
+        }
+        state.lastRefresh = new Date();
+        $("error-notice").hidden = true;
+        setConnection(true, `更新于 ${state.lastRefresh.toLocaleTimeString("zh-CN", {hour12:false})}`);
+        renderAll();
+      } catch (error) {
+        setConnection(false, "状态读取失败");
+        $("error-notice").hidden = false;
+        $("error-notice").textContent = `无法读取 Master 状态：${error.message}`;
+      }
+    }
+    async function loadMasterInfo() {
+      try {
+        const response = await fetch(new URL("/api/master-info", location.origin), {cache:"no-store"});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const info = await response.json();
+        $("master-hostname").textContent = info.hostname || "—";
+        $("master-api").textContent = `127.0.0.1:${location.port || "80"}`;
+        $("master-ssh").textContent = info.ssh_available ? "运行中 · 22/TCP" : "未检测到监听 · 22/TCP";
+        const select = $("address-select");
+        select.replaceChildren();
+        const addresses = Array.isArray(info.addresses) ? info.addresses : [];
+        const placeholder = node("option", "", addresses.length ? "选择已验证的地址" : "没有找到可用地址");
+        placeholder.value = "";
+        select.append(placeholder);
+        for (const item of addresses) {
+          const option = node("option", "", `${item.address} · ${item.interface}`);
+          option.value = item.address;
+          select.append(option);
+        }
+        select.value = addresses.find(item => item.address === $("setup-host").value)?.address || "";
+        updateSnippets();
+      } catch (error) {
+        $("master-hostname").textContent = "读取失败";
+        $("master-ssh").textContent = "无法检测";
+        showToast(`地址读取失败：${error.message}`);
+      }
+    }
+    async function loadLocalTools() {
+      try {
+        const response = await fetch(new URL("/api/local-tools", location.origin), {cache:"no-store"});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        for (const kind of ["codex", "terminal", "ssh"]) {
+          $(`local-tool-${kind}`).value = data.configured?.[kind] || "";
+          $(`local-tool-${kind}-options`).replaceChildren(...(data.suggestions?.[kind] || []).map(path => {
+            const option = node("option"); option.value = path; return option;
+          }));
+        }
+        localToolMissing = (data.missing || []).filter(kind => ["codex", "terminal"].includes(kind));
+        renderLocalToolDetection();
+      } catch (error) { $("local-tool-hint").textContent = `本机程序读取失败：${error.message}`; }
+    }
+    async function saveLocalTools() {
+      const values = Object.fromEntries(["codex", "terminal", "ssh"].map(kind => [kind, $(`local-tool-${kind}`).value.trim()]));
+      try {
+        const response = await fetch(new URL("/api/local-tools", location.origin), {
+          method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(values)
+        });
+        if (!response.ok) throw new Error((await response.json()).detail || `HTTP ${response.status}`);
+        showToast("本机程序已保存");
+        await loadLocalTools();
+      } catch (error) { showToast(`保存失败：${error.message}`); }
+    }
+    function oneLine(id, fallback) { return ($(id).value || "").replace(/[\r\n]/g, "").trim() || fallback; }
+    function updateSnippets() {
+      const alias = oneLine("setup-alias", "codex-harness-laptop").replace(/[^a-zA-Z0-9._-]/g, "") || "codex-harness-laptop";
+      const user = oneLine("setup-user", "YOUR_WINDOWS_SSH_ACCOUNT").replace(/[^a-zA-Z0-9._@-]/g, "");
+      const key = oneLine("setup-key", "~/.ssh/codex-agent-harness").replace(/[^a-zA-Z0-9._~/-]/g, "");
+      const host = oneLine("setup-host", "").replace(/[^a-zA-Z0-9.:-]/g, "") || "LAPTOP_ADDRESS_OR_DNS";
+      $("ssh-config").textContent = `Host ${alias}\n    HostName ${host}\n    User ${user}\n    IdentityFile ${key}\n    IdentitiesOnly yes\n    HostKeyAlias ${alias}\n    StrictHostKeyChecking yes`;
+      $("ssh-verify").textContent = `# 先与 Laptop 本机显示的 ED25519 指纹逐字核对\nssh-keyscan -T 5 -t ed25519 ${host} 2>/dev/null | ssh-keygen -lf - -E sha256\n# 指纹一致后，再记录主机密钥并测试登录\nssh-keyscan -T 5 -t ed25519 ${host} 2>/dev/null | sed 's/^[^ ]*/${alias}/' >> ~/.ssh/known_hosts\nssh -o BatchMode=yes ${alias} exit`;
+      $("agent-command").textContent = `export CODEX_AGENT_HARNESS_SSH_TARGET=${alias}\nexport CODEX_AGENT_HARNESS_REPORT_TOKEN='PASTE_THE_MASTER_REPORT_TOKEN'\ncodex-agent-harness`;
+    }
+    let toastTimer;
+    function showToast(message) {
+      $("toast").textContent = message;
+      $("toast").hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3000);
+    }
+    document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+    $("detail-panel").addEventListener("focusout", event => {
+      if (event.target.tagName !== "SELECT" && !(event.target.tagName === "INPUT" && event.target.hasAttribute("list"))) return;
+      setTimeout(() => {
+        if (state.detailDeferred && !pickerHasFocus()) renderDetail(true);
+      }, 0);
+    });
+    $("refresh-button").addEventListener("click", refresh);
+    $("save-local-tools").addEventListener("click", saveLocalTools);
+    $("language-select").addEventListener("change", event => setLanguage(event.target.value));
+    $("machine-search").addEventListener("input", renderTable);
+    $("machine-filter").addEventListener("change", renderTable);
+    $("refresh-addresses").addEventListener("click", loadMasterInfo);
+    $("address-select").addEventListener("change", event => { $("setup-host").value = event.target.value; updateSnippets(); });
+    for (const id of ["setup-alias", "setup-user", "setup-key", "setup-host"]) $(id).addEventListener("input", updateSnippets);
+    document.querySelectorAll("[data-copy]").forEach(button => button.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText($(button.dataset.copy).textContent); showToast("已复制到剪贴板"); }
+      catch { showToast("复制失败，请手动选择文本"); }
+    }));
+    updateSnippets();
+    const initialView = location.hash.slice(1);
+    setView(["overview", "workbench", "machines", "setup"].includes(initialView) ? initialView : "overview");
+    $("language-select").value = language;
+    localizeDom();
+    refresh();
+    setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+  </script>
+</body>
+</html>
